@@ -1,17 +1,19 @@
 <template>
   <div>
-    <wavesurfer
+    <timing-adjuster
+      :lyrics="lyrics"
+      :timings="timings"
       :audioDataUrl="audioDataUrl"
-      :regions="regions"
-      :mediaControls="true"
     />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import Wavesurfer from "@/components/Wavesurfer.vue";
 import { RegionParams } from "wavesurfer.js/dist/plugins/regions.esm.js";
+import { LYRIC_MARKERS } from "@/constants";
+import { LyricEvent } from "@/lib/timing";
+import TimingAdjuster from "@/components/TimingAdjuster.vue";
 
 function createLyricRegion(params): RegionParams {
   return {
@@ -23,9 +25,20 @@ function createLyricRegion(params): RegionParams {
 }
 
 export default defineComponent({
-  components: { Wavesurfer },
+  components: { TimingAdjuster },
   data() {
+    const lyrics = ["one", "two", "three", "four"];
+    const timings: LyricEvent[] = [
+      [1.0, LYRIC_MARKERS.SEGMENT_START],
+      [2.0, LYRIC_MARKERS.SEGMENT_END],
+      [3.0, LYRIC_MARKERS.SEGMENT_START],
+      [4.0, LYRIC_MARKERS.SEGMENT_START],
+      [5.0, LYRIC_MARKERS.SEGMENT_END],
+      [6.0, LYRIC_MARKERS.SEGMENT_START],
+    ];
     return {
+      timings,
+      lyrics,
       audioDataUrl: "",
       regions: [
         createLyricRegion({

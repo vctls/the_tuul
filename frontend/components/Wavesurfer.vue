@@ -6,7 +6,7 @@
 // A Vue wrapper for a WaveSurfer instance
 import { defineComponent } from "vue";
 import WaveSurfer from "wavesurfer.js";
-import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
+import RegionsPlugin from "@/lib/wavesurferPlugins/OpenEndedRegionPlugin";
 
 export default defineComponent({
   props: {
@@ -83,9 +83,11 @@ export default defineComponent({
     regions(newRegions) {
       if (this.wavesurfer) {
         this.regionsPlugin.clearRegions();
-        for (const region of newRegions) {
-          this.regionsPlugin.addRegion(region);
-        }
+        this.$nextTick(() => {
+          for (const region of newRegions) {
+            this.regionsPlugin.addRegion(region);
+          }
+        });
       }
     },
   },
