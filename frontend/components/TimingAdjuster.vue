@@ -110,6 +110,9 @@ export default defineComponent({
       console.log("TimingAdjuster: Region updated", region.id, region);
       const newTimings = this.applyRegionUpdateToTimings(region, this.timings);
       this.$emit("input", newTimings);
+      this.$nextTick(() => {
+        this.previewNewTiming(region);
+      });
     },
     applyRegionUpdateToTimings(
       region: Region,
@@ -120,6 +123,11 @@ export default defineComponent({
         start: region.start,
         end: region.end,
       });
+    },
+    previewNewTiming(region: Region) {
+      // When a timing changes, set the playhead 5 seconds before the changed region
+      const newPlayhead = Math.max(0, region.start - 5);
+      this.setPlayhead(newPlayhead);
     },
     onTimeUpdate(time: number) {
       this.$emit("timeupdate", time);
