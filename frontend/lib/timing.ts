@@ -126,6 +126,34 @@ export class LyricSegmentIterator {
   }
 }
 
+export function adjustSegmentTiming(segment: number, timings: Array<LyricEvent>, newValues: { start: number, end?: number }): Array<LyricEvent> {
+  // Adjust the timing of a segment by the given amount
+  // This operates on timing lists and constructs new timing lists, assembling into segments as it goes
+  let currentSegment = -1;
+  const result = [];
+  for (const [t, m] of timings) {
+    if (m == LYRIC_MARKERS.SEGMENT_START) {
+      currentSegment++;
+    }
+
+    if (currentSegment != segment) {
+      result.push([t, m]);
+      continue;
+    }
+
+    if (m == LYRIC_MARKERS.SEGMENT_START) {
+      result.push([newValues.start, m]);
+    } else if (m == LYRIC_MARKERS.SEGMENT_END && isNumber(newValues.end)) {
+      result.push([newValues.end, m]);
+    }
+  }
+
+  if (currentSegment < segment) {
+    throw new Error(`Segment ${segment} not found in timings`);
+  }
+  return result;
+}
+
 export class LyricSegment {
   text: string;
   timestamp: number;

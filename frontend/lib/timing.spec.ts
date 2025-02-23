@@ -1,4 +1,4 @@
-import { LyricSegmentIterator, LyricsScreen, compileLyricTimings, setScreenStartTimes, adjustScreenTimestamps, setSegmentEndTimes, createAssFile, floatToTimecode, LyricsLine, KaraokeOptions, LyricEvent, VerticalAlignment } from "./timing";
+import { LyricSegmentIterator, LyricsScreen, compileLyricTimings, setScreenStartTimes, adjustScreenTimestamps, setSegmentEndTimes, createAssFile, floatToTimecode, LyricsLine, KaraokeOptions, LyricEvent, VerticalAlignment, adjustSegmentTiming } from "./timing";
 import { LYRIC_MARKERS } from "../constants";
 import { LyricSegment } from "./timing";
 
@@ -220,4 +220,9 @@ test('floatToTimecode', () => {
     expect(floatToTimecode(0)).toBe("0:00:00.00");
     expect(floatToTimecode(25.42)).toBe("0:00:25.42");
     expect(floatToTimecode(60)).toBe("0:01:00.00");
+});
+
+test('adjustSegmentTiming', () => {
+    expect(adjustSegmentTiming(0, testEvents, { start: 0.5, end: 1.5 })[0][0]).toBe(0.5);
+    expect(() => adjustSegmentTiming(8, testEvents, { start: 0.5, end: 1.5 })[0][0]).toThrow("Segment 8 not found in timings");
 });
