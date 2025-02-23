@@ -5,20 +5,25 @@
       :audioDataUrl="audioDataUrl"
       :regions="regions"
       :mediaControls="true"
+      @region-updated="onRegionUpdated"
     />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { RegionParams } from "@/lib/wavesurferPlugins/OpenEndedRegionPlugin";
+import {
+  RegionParams,
+  Region,
+} from "@/lib/wavesurferPlugins/OpenEndedRegionPlugin";
 import Wavesurfer from "@/components/Wavesurfer.vue";
 
-import { LyricEvent } from "@/lib/timing";
+import { LyricEvent, adjustSegmentTiming } from "@/lib/timing";
 import { LYRIC_MARKERS } from "@/constants";
 
-function createLyricRegion(params): RegionParams {
+function createLyricRegion(id: number, params): RegionParams {
   return {
+    id: `segment_${id}`,
     loop: false,
     drag: false,
     resize: true,
@@ -59,7 +64,7 @@ export default defineComponent({
             currentLyricIndex += 1;
           }
           const lyricSegment = lyrics[currentLyricIndex];
-          currentRegion = createLyricRegion({
+          currentRegion = createLyricRegion(regions.length, {
             start: time,
             end: null,
             content: lyricSegment,
@@ -74,6 +79,21 @@ export default defineComponent({
       }
       console.log(regions);
       return regions;
+    },
+    onRegionUpdated(region: Region) {
+      console.log("TimingAdjuster: Region updated", region.id, region);
+      const newTimings = this.applyRegionUpdateToTimings(region, this.timings);
+      this.$emit("input", newTimings);
+    },
+    applyRegionUpdateToTimings(
+      region: Region,
+      timings: Array<LyricEvent>
+    ): Array<LyricEvent> {
+      const segmentNum = parseInt(region.id.split("_")[1]);
+      return adjustSegmentTiming(segmentNum, timings, {
+        start: region.start,
+        end: region.end,
+      });
     },
   },
 });

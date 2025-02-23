@@ -6,7 +6,10 @@
 // A Vue wrapper for a WaveSurfer instance
 import { defineComponent } from "vue";
 import WaveSurfer from "wavesurfer.js";
-import RegionsPlugin from "@/lib/wavesurferPlugins/OpenEndedRegionPlugin";
+import RegionsPlugin, {
+  Region,
+  RegionsPluginEvents,
+} from "@/lib/wavesurferPlugins/OpenEndedRegionPlugin";
 
 export default defineComponent({
   props: {
@@ -66,6 +69,11 @@ export default defineComponent({
       plugins: [this.regionsPlugin],
     });
     this.wavesurfer.load(this.audioDataUrl);
+
+    this.regionsPlugin.on("region-updated", (region: Region) => {
+      this.$emit("region-updated", region);
+    });
+
     // // Add regions after audio is decoded or they won't render right
     // this.wavesurfer.on("decode", () => {
     //   for (const region of this.regions) {

@@ -4,6 +4,7 @@
       :lyrics="lyrics"
       :timings="timings"
       :audioDataUrl="audioDataUrl"
+      @input="onTimingsUpdated"
     />
   </div>
 </template>
@@ -13,6 +14,7 @@ import { defineComponent } from "vue";
 import { RegionParams } from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { LYRIC_MARKERS } from "@/constants";
 import { LyricEvent } from "@/lib/timing";
+import { Region } from "@/lib/wavesurferPlugins/OpenEndedRegionPlugin";
 import TimingAdjuster from "@/components/TimingAdjuster.vue";
 
 function createLyricRegion(params): RegionParams {
@@ -66,6 +68,12 @@ export default defineComponent({
     const response = await fetch("/static/spaTreatment.m4a");
     const audioUrl = URL.createObjectURL(await response.blob());
     this.audioDataUrl = audioUrl;
+  },
+  methods: {
+    onTimingsUpdated(newTimings: Array<LyricEvent>) {
+      console.log("Timings updated", newTimings);
+      this.timings = newTimings;
+    },
   },
 });
 </script>
