@@ -2,7 +2,7 @@
   <div>
     <wavesurfer
       ref="wavesurfer"
-      :audioDataUrl="audioDataUrl"
+      :audioData="audioData"
       :regions="regions"
       :mediaControls="true"
       @region-updated="onRegionUpdated"
@@ -12,6 +12,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { LyricSegmentIterator } from "@/lib/timing";
 import {
   RegionParams,
   Region,
@@ -36,23 +37,46 @@ export default defineComponent({
     Wavesurfer,
   },
   props: {
-    lyrics: Array<String>,
+    lyrics: String,
     timings: Array<LyricEvent>,
-    audioDataUrl: String,
+    audioData: Blob,
   },
   data() {
     return {
       regions: [],
     };
   },
+  computed: {
+    splitLyrics(): Array<String> {
+      if (this.lyrics == null) {
+        return [];
+      }
+      const lyricIterator = new LyricSegmentIterator(this.lyrics)[
+        Symbol.iterator
+      ]();
+
+      return [...lyricIterator].map((segment) => segment.text);
+    },
+  },
   mounted() {
-    this.regions = this.createRegions(this.timings, this.lyrics);
+    this.regions = this.createRegions(this.timings, this.splitLyrics);
+  },
+  watch: {
+    timings(newTimings: Array<LyricEvent>) {
+      this.regions = this.createRegions(newTimings, this.splitLyrics);
+    },
+    lyrics(newLyrics: String) {
+      this.regions = this.createRegions(this.timings, this.splitLyrics);
+    },
   },
   methods: {
     createRegions(
       timings: Array<LyricEvent>,
       lyrics: Array<String>
     ): Array<RegionParams> {
+      if (!timings || !lyrics) {
+        return [];
+      }
       let regions = [];
       let currentRegion = null;
       let currentLyricIndex = 0;
