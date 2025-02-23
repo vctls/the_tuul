@@ -178,6 +178,7 @@ import { CreationPhase } from "@/types";
 import {
   useMusicSeparationStore,
   NO_VOCALS_SEPARATOR_MODEL,
+  SeparatedTrack,
 } from "@/stores/musicSeparation";
 
 const fonts = {
@@ -335,11 +336,39 @@ export default defineComponent({
     saveSettings(settings: Object) {
       localStorage.videoOptions = JSON.stringify(settings);
     },
-    async separateTrack(songFile: File, model: string) {
-      if (this.musicSeparationStore.result == null) {
-        await this.musicSeparationStore.startSeparation(songFile, model);
-      }
-      return await this.musicSeparationStore.result;
+    async separateTrack(
+      songFile: File,
+      model: string
+    ): Promise<SeparatedTrack> {
+      const backingTrackPromise = new Promise<SeparatedTrack>(
+        (resolve, reject) => {
+          if (this.musicSeparationStore.separatedTrack) {
+            resolve(this.musicSeparationStore.separatedTrack);
+            return;
+          }
+          this.musicSeparationStore.startSeparation(songFile, model);
+          const stopWatchingBacking = this.$watch(
+            "musicSeparationStore.separatedTrack",
+            (separatedTrack) => {
+              console.log("separatedTrackWatcher", separatedTrack);
+              if (separatedTrack) {
+                stopWatchingBacking();
+                stopWatchingError();
+                resolve(separatedTrack);
+              }
+            }
+          );
+          const stopWatchingError = this.$watch(
+            "musicSeparationStore.error",
+            (error) => {
+              stopWatchingBacking();
+              stopWatchingError();
+              reject(error);
+            }
+          );
+        }
+      );
+      return backingTrackPromise;
     },
     async createVideo() {
       let self = this;
@@ -356,14 +385,14 @@ export default defineComponent({
             new Date().getTime() -
             this.musicSeparationStore.separationStartTime.getTime();
         }, 1000);
-        const accompanimentDataUrl = await this.separateTrack(
+        const separatedTrack = await this.separateTrack(
           this.songFile,
           this.musicSeparationModel
         );
         this.creationPhase = CreationPhase.CreatingVideo;
         const videoOptions = { createTitleScreens: true, ...this.videoOptions };
         const videoFile: Uint8Array = await video.createVideo(
-          accompanimentDataUrl,
+          separatedTrack.backing,
           videoOptions.useBackgroundVideo ? this.videoBlob : null,
           this.subtitles,
           this.audioDelay,
