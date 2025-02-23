@@ -1,5 +1,6 @@
 <template>
   <b-tab-item label="Introduction" icon="circle-info" class="scroll-wrapper">
+    <wavesurfer-dev-harness />
     <div class="content">
       <p>
         <strong>Step 1: Choose a music file.</strong> Click the
@@ -125,6 +126,9 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import AdvancedOptionsModal from "@/components/AdvancedOptionsModal.vue";
+import WavesurferDevHarness from "@/components/WavesurferDevHarness.vue";
 
-export default defineComponent({});
+export default defineComponent({
+  components: { WavesurferDevHarness },
+});
 </script>
