@@ -66,8 +66,6 @@ export type RegionParams = {
     start: number
     /** The end position of the region (in seconds) */
     end?: number
-    /** Allow/dissallow dragging the region */
-    drag?: boolean
     /** Allow/dissallow resizing the region */
     resize?: boolean
     /** The color of the region (CSS color) */
@@ -88,7 +86,6 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
     public element: HTMLElement
     public id: string
     public start: number
-    public drag: boolean
     public resize: boolean
     public color: string
     public content?: HTMLElement
@@ -107,6 +104,7 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
     }
 
     set end(time: number | undefined) {
+        console.log(`Setting end for ${this.content?.innerText} to ${time}`)
         this._explicitEnd = time
     }
 
@@ -115,8 +113,10 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
     }
 
     set nextRegion(region: Region | undefined) {
-        console.log(`Setting next region for ${this.content.innerText} to ${region?.content.innerText}`)
+        console.log(`Setting next region for ${this.content?.innerText} to ${region?.content.innerText}`)
         this._nextRegion = region
+        // @todo how to unsubscribe?
+        this.nextRegion.on('update', () => this.onNeighborMoved('next'))
         this.renderPosition()
     }
 
@@ -139,7 +139,6 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
         this.id = params.id || `region-${Math.random().toString(32).slice(2)}`
         this.start = this.clampPosition(params.start)
         this.end = params.end;
-        this.drag = params.drag ?? true
         this.resize = params.resize ?? true
         this.color = params.color ?? 'rgba(0, 0, 0, 0.1)'
         this.minLength = params.minLength ?? this.minLength
@@ -260,7 +259,7 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
                 borderRadius: '2px',
                 boxSizing: 'border-box',
                 transition: 'background-color 0.2s ease',
-                cursor: this.drag ? 'grab' : 'default',
+                cursor: 'default',
                 pointerEvents: 'all',
             },
         })
@@ -281,11 +280,6 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
         this.element.style.right = `${end * 100}%`
     }
 
-    private toggleCursor(toggle: boolean) {
-        if (!this.drag || !this.element?.style) return
-        this.element.style.cursor = toggle ? 'grabbing' : 'grab'
-    }
-
     private initMouseEvents() {
         const { element } = this
         if (!element) return
@@ -294,21 +288,6 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
         element.addEventListener('mouseenter', (e) => this.emit('over', e))
         element.addEventListener('mouseleave', (e) => this.emit('leave', e))
         element.addEventListener('dblclick', (e) => this.emit('dblclick', e))
-        element.addEventListener('pointerdown', () => this.toggleCursor(true))
-        element.addEventListener('pointerup', () => this.toggleCursor(false))
-
-        // Drag
-        this.subscriptions.push(
-            makeDraggable(
-                element,
-                (dx) => this.onMove(dx),
-                () => this.toggleCursor(true),
-                () => {
-                    this.toggleCursor(false)
-                    this.drag && this.emit('update-end')
-                },
-            ),
-        )
 
         if (this.contentEditable && this.content) {
             this.content.addEventListener('click', (e) => this.onContentClick(e))
@@ -316,7 +295,7 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
         }
     }
 
-    public _onUpdate(dx: number, side?: 'start' | 'end') {
+    public _onUpdate(dx: number, side: 'start' | 'end') {
         if (!this.element.parentElement) return
         const { width } = this.element.parentElement.getBoundingClientRect()
         const deltaSeconds = (dx / width) * this.totalDuration
@@ -343,9 +322,13 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
         }
     }
 
-    private onMove(dx: number) {
-        if (!this.drag) return
-        this._onUpdate(dx)
+    private onNeighborMoved(side: 'prev' | 'next') {
+        if (side === 'prev' || !this.isOpenEnded) return
+
+        const newEnd = this.nextRegion?.start
+        if (newEnd !== undefined) {
+            this.renderPosition()
+        }
     }
 
     private onResize(dx: number, side: 'start' | 'end') {
@@ -410,11 +393,6 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
         if (options.color) {
             this.color = options.color
             this.element.style.backgroundColor = this.color
-        }
-
-        if (options.drag !== undefined) {
-            this.drag = options.drag
-            this.element.style.cursor = this.drag ? 'grab' : 'default'
         }
 
         if (options.start !== undefined || options.end !== undefined) {
