@@ -100,6 +100,7 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
 
     private _explicitEnd?: number
     private _nextRegion?: Region
+    private _prevRegion?: Region
 
     get end() {
         return this._explicitEnd ?? this._nextRegion?.start ?? this.totalDuration;
@@ -117,6 +118,14 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
         console.log(`Setting next region for ${this.content.innerText} to ${region?.content.innerText}`)
         this._nextRegion = region
         this.renderPosition()
+    }
+
+    get prevRegion() {
+        return this._prevRegion
+    }
+
+    set prevRegion(region: Region | undefined) {
+        this._prevRegion = region
     }
 
     public get isOpenEnded(): boolean {
@@ -315,10 +324,13 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
         const newEnd = !side || side === 'end' ? this._explicitEnd + deltaSeconds : this.end
         const length = newEnd - newStart
 
+        const overlapsPrevRegion = this.prevRegion && !this.prevRegion.isOpenEnded && newStart < this.prevRegion.end
+
         if (
             newStart >= 0 &&
             newEnd <= this.totalDuration &&
             (this.nextRegion ? newEnd <= this.nextRegion.start : true) &&
+            !overlapsPrevRegion &&
             newStart <= newEnd &&
             length >= this.minLength &&
             length <= this.maxLength
@@ -447,6 +459,7 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
 class RegionsPlugin extends BasePlugin<RegionsPluginEvents, RegionsPluginOptions> {
     private regions: Region[] = []
     private regionsContainer: HTMLElement
+    private firstRegion?: Region
 
     /** Create an instance of RegionsPlugin */
     constructor(options?: RegionsPluginOptions) {
@@ -539,28 +552,30 @@ class RegionsPlugin extends BasePlugin<RegionsPluginEvents, RegionsPluginOptions
     }
 
     private setNextRegion(newRegion: Region) {
-        // Place this region in the "linked list" of regions
-        const regions = this.regions
-        if (regions.length === 0) return
-
-        let prevRegion: Region = null
-        // Find the region that starts soonest before the new region
-        for (let i = 0; i < regions.length; i++) {
-            const region = regions[i]
-            if (region.start < newRegion.start && (!prevRegion || region.start > prevRegion.start)) {
-                prevRegion = region
-            }
+        // Place this region in the doubly-linked list of regions
+        if (!this.firstRegion) {
+            this.firstRegion = newRegion
+            return
         }
-        if (prevRegion) {
-            const oldNextRegion = prevRegion.nextRegion
-            prevRegion.nextRegion = newRegion
-            if (oldNextRegion) newRegion.nextRegion = oldNextRegion
-        } else {
-            // newRegion is the earliest region, so set its nextRegion
-            const earliestRegion = regions.reduce((earliest, region) =>
-                region.start < earliest.start ? region : earliest,
-            )
-            newRegion.nextRegion = earliestRegion;
+
+        let region = this.firstRegion;
+        while (region.start < newRegion.start && region.nextRegion) {
+            region = region.nextRegion
+        }
+
+        if (region.start > newRegion.start) {
+            this.firstRegion = newRegion
+            newRegion.nextRegion = region
+            return
+        }
+
+        const nextRegion = region.nextRegion
+        region.nextRegion = newRegion
+        newRegion.prevRegion = region
+
+        if (nextRegion) {
+            newRegion.nextRegion = nextRegion
+            nextRegion.prevRegion = newRegion
         }
     }
 
