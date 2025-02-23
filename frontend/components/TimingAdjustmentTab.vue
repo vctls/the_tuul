@@ -84,7 +84,6 @@ export default defineComponent({
     },
     onPlayheadUpdate(newPlayhead: number) {
       if (newPlayhead !== this.playhead) {
-        console.log("Playhead update", newPlayhead);
         this.playhead = newPlayhead;
       }
     },

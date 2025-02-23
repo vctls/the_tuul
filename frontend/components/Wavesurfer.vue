@@ -115,6 +115,29 @@ export default defineComponent({
       // }
     },
   },
+  methods: {
+    play() {
+      if (this.wavesurfer) {
+        this.wavesurfer.play();
+      }
+    },
+    pause() {
+      if (this.wavesurfer) {
+        this.wavesurfer.pause();
+      }
+    },
+    setTime(time: number) {
+      if (this.wavesurfer) {
+        this.wavesurfer.setTime(time);
+      }
+    },
+    getCurrentTime() {
+      if (this.wavesurfer) {
+        return this.wavesurfer.getCurrentTime();
+      }
+      return 0;
+    },
+  },
   beforeUnmount() {
     if (this.wavesurfer) {
       this.wavesurfer.destroy();
