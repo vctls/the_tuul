@@ -66,13 +66,13 @@ export default defineComponent({
       plugins: [this.regionsPlugin],
     });
     this.wavesurfer.load(this.audioDataUrl);
-    // Add regions after audio is decoded or they won't render right
-    this.wavesurfer.on("decode", () => {
-      for (const region of this.regions) {
-        console.log(region);
-        this.regionsPlugin.addRegion(region);
-      }
-    });
+    // // Add regions after audio is decoded or they won't render right
+    // this.wavesurfer.on("decode", () => {
+    //   for (const region of this.regions) {
+    //     console.log(region);
+    //     this.regionsPlugin.addRegion(region);
+    //   }
+    // });
   },
   watch: {
     audioDataUrl(newAudioDataUrl) {
@@ -81,14 +81,22 @@ export default defineComponent({
       }
     },
     regions(newRegions) {
-      if (this.wavesurfer) {
-        this.regionsPlugin.clearRegions();
-        this.$nextTick(() => {
-          for (const region of newRegions) {
-            this.regionsPlugin.addRegion(region);
-          }
-        });
-      }
+      console.log("regions changed", newRegions);
+      // // Add regions after audio is decoded or they won't render right
+      this.wavesurfer.on("decode", () => {
+        for (const region of this.regions) {
+          console.log(region);
+          this.regionsPlugin.addRegion(region);
+        }
+      });
+      // if (this.wavesurfer) {
+      //   this.regionsPlugin.clearRegions();
+      //   this.$nextTick(() => {
+      //     for (const region of newRegions) {
+      //       this.regionsPlugin.addRegion(region);
+      //     }
+      //   });
+      // }
     },
   },
   beforeUnmount() {
