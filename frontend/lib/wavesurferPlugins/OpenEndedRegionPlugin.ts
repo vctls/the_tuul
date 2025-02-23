@@ -116,7 +116,7 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
         console.log(`Setting next region for ${this.content?.innerText} to ${region?.content.innerText}`)
         this._nextRegion = region
         // @todo how to unsubscribe?
-        this.nextRegion.on('update', () => this.onNeighborMoved('next'))
+        this.subscriptions.push(this.nextRegion.on('update', () => this.onNeighborMoved('next')))
         this.renderPosition()
     }
 
@@ -303,19 +303,22 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
         const newEnd = !side || side === 'end' ? this._explicitEnd + deltaSeconds : this.end
         const length = newEnd - newStart
 
-        const overlapsPrevRegion = this.prevRegion && !this.prevRegion.isOpenEnded && newStart < this.prevRegion.end
-
+        // If previous region is open-ended, we can't resize past its start. Otherwise 
+        // we can't resize past its end.
+        const hasBadOverlap = this.prevRegion
+            && ((newStart < this.prevRegion.end && !this.prevRegion.isOpenEnded)
+                || this.prevRegion.isOpenEnded && newStart < this.prevRegion.start);
         if (
+            !hasBadOverlap &&
             newStart >= 0 &&
             newEnd <= this.totalDuration &&
             (this.nextRegion ? newEnd <= this.nextRegion.start : true) &&
-            !overlapsPrevRegion &&
             newStart <= newEnd &&
             length >= this.minLength &&
             length <= this.maxLength
         ) {
             this.start = newStart
-            this._explicitEnd = newEnd
+            this._explicitEnd = this._explicitEnd && newEnd
 
             this.renderPosition()
             this.emit('update', side)
