@@ -24,7 +24,7 @@
       ref="timing-adjuster"
       :lyrics="lyrics"
       :timings="timings"
-      :audioData="songFile"
+      :audioData="musicSeparationStore.audioData"
       @input="onTimingsChange"
       @timeupdate="onPlayheadUpdate"
       @seeking="onPlayheadUpdate"
@@ -41,6 +41,7 @@ import {
 } from "@/lib/timing";
 import TimingAdjuster from "@/components/TimingAdjuster.vue";
 import SubtitleDisplay from "./SubtitleDisplay.vue";
+import { useMusicSeparationStore } from "@/stores/musicSeparation";
 
 export default defineComponent({
   components: { TimingAdjuster, SubtitleDisplay },
@@ -48,6 +49,12 @@ export default defineComponent({
     lyrics: String,
     timings: Array,
     songFile: { type: Blob, required: false },
+  },
+  setup() {
+    const musicSeparationStore = useMusicSeparationStore();
+    return {
+      musicSeparationStore,
+    };
   },
   data() {
     return {

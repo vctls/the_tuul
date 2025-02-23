@@ -3,9 +3,12 @@ import { API_HOSTNAME } from "@/constants";
 import { SeparationModel } from "@/types";
 
 // Functions for working with audio files and streams
+export interface TrackSeparationResult {
+    backing: string; // Blob URL of backing track
+    vocals: string; // Blob URL of vocals track
+}
 
-
-export async function separateTrack(songFile: File, modelName: SeparationModel): Promise<string> {
+export async function separateTrack(songFile: File, modelName: SeparationModel): Promise<TrackSeparationResult> {
     // Separate the track and return a blob url of the accompaniment stem data
     const formData = new FormData();
     formData.append("songFile", songFile);
@@ -19,10 +22,12 @@ export async function separateTrack(songFile: File, modelName: SeparationModel):
     console.log("Received separated audio. Unzipping...");
     const zip = await jszip.loadAsync(zipContents);
     const contents = await zip.file("accompaniment.wav").async("blob");
-    const accompanimentUrl = URL.createObjectURL(contents);
-    console.log("Got accompaniment: ", accompanimentUrl);
+    const backingUrl = URL.createObjectURL(contents);
+    const vocals = await zip.file("vocals.wav").async("blob");
+    const vocalsUrl = URL.createObjectURL(vocals);
+    console.log("Got backing URL: ", backingUrl);
 
-    return accompanimentUrl;
+    return { backing: backingUrl, vocals: vocalsUrl };
 }
 
 export default { separateTrack }
