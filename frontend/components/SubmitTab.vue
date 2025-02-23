@@ -229,6 +229,7 @@ export default defineComponent({
       creationPhase: CreationPhase.NotStarted,
       videoProgress: 0,
       videoOptions: {
+        addTitleScreen: true,
         addCountIns: true,
         addInstrumentalScreens: true,
         addStaggeredLines: true,
@@ -360,12 +361,13 @@ export default defineComponent({
           this.musicSeparationModel
         );
         this.creationPhase = CreationPhase.CreatingVideo;
+        const videoOptions = { createTitleScreens: true, ...this.videoOptions };
         const videoFile: Uint8Array = await video.createVideo(
           accompanimentDataUrl,
-          this.videoOptions.useBackgroundVideo ? this.videoBlob : null,
+          videoOptions.useBackgroundVideo ? this.videoBlob : null,
           this.subtitles,
           this.audioDelay,
-          this.videoOptions,
+          videoOptions,
           {
             artist: this.songInfo.artist,
             title: this.songInfo.title,

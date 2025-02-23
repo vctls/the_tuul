@@ -2,10 +2,11 @@ import { LYRIC_MARKERS, VIDEO_SIZE, TITLE_SCREEN_DURATION } from "../constants";
 import { addQuickStartCountIn, addScreenCountIns, addTitleScreen, addInstrumentalScreens, displayQuickLinesEarly } from "./adjustments";
 import * as _ from "lodash";
 import { isNumber } from "lodash";
-import { Color as BuefyColor } from "buefy/src/utils/color";
+import { default as BuefyColor } from "buefy/src/utils/color";
 
 
 export interface KaraokeOptions {
+  addTitleScreen: boolean,
   addCountIns: boolean,
   addInstrumentalScreens: boolean,
   addStaggeredLines: boolean,
@@ -24,6 +25,24 @@ export interface KaraokeOptions {
 
 export enum VerticalAlignment {
   Top, Middle, Bottom
+}
+
+export const DEFAULT_KARAOKE_OPTIONS: KaraokeOptions = {
+  addTitleScreen: true,
+  addCountIns: true,
+  addInstrumentalScreens: true,
+  addStaggeredLines: true,
+  useBackgroundVideo: false,
+  verticalAlignment: VerticalAlignment.Middle,
+  font: {
+    size: 20,
+    name: "Arial Narrow",
+  },
+  color: {
+    background: BuefyColor.parse("black"),
+    primary: BuefyColor.parse("#FF00FF"),
+    secondary: BuefyColor.parse("#00FFFF"),
+  },
 }
 
 interface Segment {
@@ -517,7 +536,9 @@ export function createScreens(lyrics: string, lyricEvents: LyricEvent[], songDur
     screens = addQuickStartCountIn(screens);
     screens = addScreenCountIns(screens);
   }
-  screens = addTitleScreen(screens, title, artist);
+  if (options.addTitleScreen) {
+    screens = addTitleScreen(screens, title, artist);
+  }
   if (options.addStaggeredLines) {
     screens = displayQuickLinesEarly(screens, options);
   }

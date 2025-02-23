@@ -6,6 +6,8 @@
       :regions="regions"
       :mediaControls="true"
       @region-updated="onRegionUpdated"
+      @timeupdate="onTimeUpdate"
+      @seeking="onSeeking"
     />
   </div>
 </template>
@@ -118,6 +120,17 @@ export default defineComponent({
         start: region.start,
         end: region.end,
       });
+    },
+    onTimeUpdate(time: number) {
+      this.$emit("timeupdate", time);
+    },
+    onSeeking(time: number) {
+      this.$emit("seeking", time);
+    },
+    setPlayhead(playhead: number) {
+      if (playhead != this.$refs.wavesurfer.getCurrentTime()) {
+        this.$refs.wavesurfer.setTime(playhead);
+      }
     },
   },
 });

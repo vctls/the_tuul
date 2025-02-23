@@ -3,6 +3,7 @@ import { LYRIC_MARKERS } from "../constants";
 import { LyricSegment } from "./timing";
 
 const DEFAULT_OPTIONS: KaraokeOptions = {
+    addTitleScreen: true,
     addCountIns: true,
     addInstrumentalScreens: true,
     addStaggeredLines: true,

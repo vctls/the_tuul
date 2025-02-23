@@ -19,7 +19,7 @@ export default defineComponent({
     },
     cursorColor: {
       type: String,
-      default: "gray",
+      default: "pink",
     },
     cursorWidth: {
       type: Number,
@@ -69,6 +69,14 @@ export default defineComponent({
       plugins: [this.regionsPlugin],
     });
     this.wavesurfer.loadBlob(this.audioData);
+
+    this.wavesurfer.on("seeking", (time: number) => {
+      this.$emit("seeking", time);
+    });
+
+    this.wavesurfer.on("timeupdate", (time: number) => {
+      this.$emit("timeupdate", time);
+    });
 
     this.regionsPlugin.on("region-updated", (region: Region) => {
       this.$emit("region-updated", region);

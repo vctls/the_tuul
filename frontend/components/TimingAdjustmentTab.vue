@@ -12,33 +12,93 @@
         you can also adjust the end of it.
       </p>
     </div>
+    <subtitle-display
+      class="subtitle-display"
+      v-if="songFile"
+      ref="subtitleDisplay"
+      :subtitles="subtitles"
+      :fonts="{}"
+    />
     <timing-adjuster
       v-if="songFile"
+      ref="timing-adjuster"
       :lyrics="lyrics"
       :timings="timings"
       :audioData="songFile"
       @input="onTimingsChange"
+      @timeupdate="onPlayheadUpdate"
+      @seeking="onPlayheadUpdate"
     />
   </b-tab-item>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { LyricEvent } from "@/lib/timing";
+import {
+  createAssFile,
+  LyricEvent,
+  DEFAULT_KARAOKE_OPTIONS,
+} from "@/lib/timing";
 import TimingAdjuster from "@/components/TimingAdjuster.vue";
+import SubtitleDisplay from "./SubtitleDisplay.vue";
 
 export default defineComponent({
-  components: { TimingAdjuster },
+  components: { TimingAdjuster, SubtitleDisplay },
   props: {
     lyrics: String,
     timings: Array,
     songFile: { type: Blob, required: false },
   },
-
+  data() {
+    return {
+      // Controls playhead in video and adjuster (in seconds)
+      playhead: 0.0,
+    };
+  },
+  computed: {
+    subtitles() {
+      return createAssFile(
+        this.lyrics,
+        this.timings,
+        this.songFile.duration,
+        "",
+        "",
+        {
+          ...DEFAULT_KARAOKE_OPTIONS,
+          addTitleScreen: false,
+          addCountIns: false,
+        }
+      );
+    },
+  },
+  watch: {
+    playhead(newPlayhead: number) {
+      if (this.$refs.subtitleDisplay) {
+        this.$refs.subtitleDisplay.setPlayhead(newPlayhead);
+      }
+    },
+  },
   methods: {
     onTimingsChange(newTimings: Array<LyricEvent>) {
       this.$emit("input", newTimings);
     },
+    onPlayheadUpdate(newPlayhead: number) {
+      if (newPlayhead !== this.playhead) {
+        console.log("Playhead update", newPlayhead);
+        this.playhead = newPlayhead;
+      }
+    },
   },
 });
 </script>
+
+<style scoped>
+.timing-adjustment-tab {
+  display: flex;
+  flex-direction: column;
+}
+
+.subtitle-display {
+  align-self: center;
+}
+</style>
