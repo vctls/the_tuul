@@ -42,6 +42,12 @@
       </template>
     </b-navbar>
     <b-tabs expanded :vertical="!isMobile" type="is-boxed" class="main-tabs">
+      <timing-adjustment-tab
+        :lyrics="lyricText"
+        :timings="timings"
+        :songFile="songInfo.file"
+        @input="onTimingsComplete"
+      />
       <help-tab></help-tab>
       <song-info-tab
         v-model="songInfo"
@@ -74,20 +80,23 @@ import HelpTab from "@/components/HelpTab.vue";
 import SongInfoTab from "@/components/SongInfoTab.vue";
 import LyricInputTab from "@/components/LyricInputTab.vue";
 import SongTimingTab from "@/components/SongTimingTab.vue";
+import TimingAdjustmentTab from "@/components/TimingAdjustmentTab.vue";
 import SubmitTab from "@/components/SubmitTab.vue";
 import {
   BACKING_VOCALS_SEPARATOR_MODEL,
   useMusicSeparationStore,
 } from "@/stores/musicSeparation";
-// import mountedHarness from "@/mountedHarness";
+import mountedHarness from "@/mountedHarness";
+import { LyricEvent } from "./lib/timing";
 
 export default defineComponent({
-  // mixins: [mountedHarness],
+  mixins: [mountedHarness],
   components: {
     HelpTab,
     SongInfoTab,
     LyricInputTab,
     SongTimingTab,
+    TimingAdjustmentTab,
     SubmitTab,
   },
   setup() {
@@ -131,7 +140,8 @@ export default defineComponent({
     isMobile,
   },
   methods: {
-    onTimingsComplete(timings) {
+    onTimingsComplete(timings: Array<LyricEvent>) {
+      console.log("App: timings", timings);
       this.timings = timings;
     },
     onOptionsChange(newOptions) {

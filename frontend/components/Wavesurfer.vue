@@ -13,8 +13,8 @@ import RegionsPlugin, {
 
 export default defineComponent({
   props: {
-    audioDataUrl: {
-      type: String,
+    audioData: {
+      type: Blob,
       required: true,
     },
     cursorColor: {
@@ -68,7 +68,7 @@ export default defineComponent({
       normalize: true,
       plugins: [this.regionsPlugin],
     });
-    this.wavesurfer.load(this.audioDataUrl);
+    this.wavesurfer.loadBlob(this.audioData);
 
     this.regionsPlugin.on("region-updated", (region: Region) => {
       this.$emit("region-updated", region);
@@ -83,9 +83,9 @@ export default defineComponent({
     // });
   },
   watch: {
-    audioDataUrl(newAudioDataUrl) {
+    audioData(newAudioData: Blob) {
       if (this.wavesurfer) {
-        this.wavesurfer.load(newAudioDataUrl);
+        this.wavesurfer.loadBlob(newAudioData);
       }
     },
     regions(newRegions) {
