@@ -3,13 +3,21 @@
  * Regions can be clicked on, dragged and resized.
  * You can set the color and content of each region, as well as their HTML content.
  * Regions can be open-ended, meaning they have no end time. A region with no end time
- * extends to the end of the audio or the start of the next region
+ * extends to the end of the audio or the start of the next region.
  */
 
-import BasePlugin, { type BasePluginEvents } from 'wavesurfer.js/dist/base-plugin';
 import { makeDraggable } from 'wavesurfer.js/dist/draggable';
+import { BasePlugin } from 'wavesurfer.js/dist/base-plugin';
+import { BasePluginEvents } from 'wavesurfer.js/dist/base-plugin';
 import EventEmitter from 'wavesurfer.js/dist/event-emitter'
 import createElement from 'wavesurfer.js/dist/dom'
+import { property } from 'lodash';
+
+export class OverlapError extends Error {
+    constructor(region: Region, otherRegion: Region) {
+        super(`Region ${region.id} overlaps with existing region ${otherRegion.id}`)
+    }
+}
 
 export type RegionsPluginOptions = undefined
 
@@ -80,7 +88,6 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
     public element: HTMLElement
     public id: string
     public start: number
-    public end: number
     public drag: boolean
     public resize: boolean
     public color: string
@@ -91,13 +98,38 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
     public contentEditable = false
     public subscriptions: (() => void)[] = []
 
+    private _explicitEnd?: number
+    private _nextRegion?: Region
+
+    get end() {
+        return this._explicitEnd ?? this._nextRegion?.start ?? this.totalDuration;
+    }
+
+    set end(time: number | undefined) {
+        this._explicitEnd = time
+    }
+
+    get nextRegion() {
+        return this._nextRegion
+    }
+
+    set nextRegion(region: Region | undefined) {
+        console.log(`Setting next region for ${this.content.innerText} to ${region?.content.innerText}`)
+        this._nextRegion = region
+        this.renderPosition()
+    }
+
+    public get isOpenEnded(): boolean {
+        return this._explicitEnd == undefined
+    }
+
     constructor(params: RegionParams, private totalDuration: number, private numberOfChannels = 0) {
         super()
 
         this.subscriptions = []
         this.id = params.id || `region-${Math.random().toString(32).slice(2)}`
         this.start = this.clampPosition(params.start)
-        this.end = this.clampPosition(params.end ?? params.start)
+        this.end = params.end;
         this.drag = params.drag ?? true
         this.resize = params.resize ?? true
         this.color = params.color ?? 'rgba(0, 0, 0, 0.1)'
@@ -114,7 +146,8 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
     }
 
     private clampPosition(time: number): number {
-        return Math.max(0, Math.min(this.totalDuration, time))
+        const maxEndTime = this.nextRegion ? this.nextRegion.start : this.totalDuration
+        return Math.max(0, Math.min(maxEndTime, time))
     }
 
     private setPart() {
@@ -147,20 +180,6 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
             element,
         )
 
-        const rightHandle = createElement(
-            'div',
-            {
-                part: 'region-handle region-handle-right',
-                style: {
-                    ...handleStyle,
-                    right: '0',
-                    borderRight: '2px solid rgba(0, 0, 0, 0.5)',
-                    borderRadius: '0 2px 2px 0',
-                },
-            },
-            element,
-        )
-
         // Resize
         const resizeThreshold = 1
         this.subscriptions.push(
@@ -170,15 +189,34 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
                 () => null,
                 () => this.onEndResizing(),
                 resizeThreshold,
-            ),
-            makeDraggable(
-                rightHandle,
-                (dx) => this.onResize(dx, 'end'),
-                () => null,
-                () => this.onEndResizing(),
-                resizeThreshold,
-            ),
+            )
         )
+
+        if (!this.isOpenEnded) {
+            // Make the right handle draggable too
+            const rightHandle = createElement(
+                'div',
+                {
+                    part: 'region-handle region-handle-right',
+                    style: {
+                        ...handleStyle,
+                        right: '0',
+                        borderRight: '2px solid rgba(0, 0, 0, 0.5)',
+                        borderRadius: '0 2px 2px 0',
+                    },
+                },
+                element,
+            )
+            this.subscriptions.push(
+                makeDraggable(
+                    rightHandle,
+                    (dx) => this.onResize(dx, 'end'),
+                    () => null,
+                    () => this.onEndResizing(),
+                    resizeThreshold,
+                ),
+            )
+        }
     }
 
     private removeResizeHandles(element: HTMLElement) {
@@ -217,6 +255,7 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
                 pointerEvents: 'all',
             },
         })
+        console.log('element', element)
 
         // Add resize handles
         if (!isMarker && this.resize) {
@@ -273,18 +312,19 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
         const { width } = this.element.parentElement.getBoundingClientRect()
         const deltaSeconds = (dx / width) * this.totalDuration
         const newStart = !side || side === 'start' ? this.start + deltaSeconds : this.start
-        const newEnd = !side || side === 'end' ? this.end + deltaSeconds : this.end
+        const newEnd = !side || side === 'end' ? this._explicitEnd + deltaSeconds : this.end
         const length = newEnd - newStart
 
         if (
             newStart >= 0 &&
             newEnd <= this.totalDuration &&
+            (this.nextRegion ? newEnd <= this.nextRegion.start : true) &&
             newStart <= newEnd &&
             length >= this.minLength &&
             length <= this.maxLength
         ) {
             this.start = newStart
-            this.end = newEnd
+            this._explicitEnd = newEnd
 
             this.renderPosition()
             this.emit('update', side)
@@ -368,7 +408,7 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
         if (options.start !== undefined || options.end !== undefined) {
             const isMarker = this.start === this.end
             this.start = this.clampPosition(options.start ?? this.start)
-            this.end = this.clampPosition(options.end ?? (isMarker ? this.start : this.end))
+            this._explicitEnd = this.clampPosition(options.end ?? (isMarker ? this.start : this.end))
             this.renderPosition()
             this.setPart()
         }
@@ -475,29 +515,53 @@ class RegionsPlugin extends BasePlugin<RegionsPluginEvents, RegionsPluginOptions
         return this.regions
     }
 
-    private avoidOverlapping(region: Region) {
-        if (!region.content) return
-
-        setTimeout(() => {
-            // Check that the label doesn't overlap with other labels
-            // If it does, push it down until it doesn't
-            const div = region.content as HTMLElement
-            const box = div.getBoundingClientRect()
-
-            const overlap = this.regions
-                .map((reg) => {
-                    if (reg === region || !reg.content) return 0
-
-                    const otherBox = reg.content.getBoundingClientRect()
-                    if (box.left < otherBox.left + otherBox.width && otherBox.left < box.left + box.width) {
-                        return otherBox.height
+    private avoidOverlapping(newRegion: Region) {
+        // Ensure regions don't overlap
+        this.regions.forEach((reg) => {
+            if (reg === newRegion) return
+            if (newRegion.isOpenEnded) {
+                if (reg.isOpenEnded) return
+                if (reg.start < newRegion.start && newRegion.start < reg.end) {
+                    throw new OverlapError(newRegion, reg)
+                }
+            } else {
+                if (reg.isOpenEnded) {
+                    if (newRegion.start < reg.start && newRegion.end > reg.start) {
+                        throw new OverlapError(newRegion, reg)
                     }
-                    return 0
-                })
-                .reduce((sum, val) => sum + val, 0)
+                } else {
+                    if (reg.start < newRegion.end && newRegion.start < reg.end) {
+                        throw new OverlapError(newRegion, reg)
+                    }
+                }
+            }
+        })
+    }
 
-            div.style.marginTop = `${overlap}px`
-        }, 10)
+    private setNextRegion(newRegion: Region) {
+        // Place this region in the "linked list" of regions
+        const regions = this.regions
+        if (regions.length === 0) return
+
+        let prevRegion: Region = null
+        // Find the region that starts soonest before the new region
+        for (let i = 0; i < regions.length; i++) {
+            const region = regions[i]
+            if (region.start < newRegion.start && (!prevRegion || region.start > prevRegion.start)) {
+                prevRegion = region
+            }
+        }
+        if (prevRegion) {
+            const oldNextRegion = prevRegion.nextRegion
+            prevRegion.nextRegion = newRegion
+            if (oldNextRegion) newRegion.nextRegion = oldNextRegion
+        } else {
+            // newRegion is the earliest region, so set its nextRegion
+            const earliestRegion = regions.reduce((earliest, region) =>
+                region.start < earliest.start ? region : earliest,
+            )
+            newRegion.nextRegion = earliestRegion;
+        }
     }
 
     private adjustScroll(region: Region) {
@@ -548,6 +612,7 @@ class RegionsPlugin extends BasePlugin<RegionsPluginEvents, RegionsPluginOptions
     private saveRegion(region: Region) {
         this.virtualAppend(region, this.regionsContainer, region.element)
         this.avoidOverlapping(region)
+        this.setNextRegion(region)
         this.regions.push(region)
 
         const regionSubscriptions = [
@@ -612,68 +677,6 @@ class RegionsPlugin extends BasePlugin<RegionsPluginEvents, RegionsPluginOptions
         }
 
         return region
-    }
-
-    /**
-     * Enable creation of regions by dragging on an empty space on the waveform.
-     * Returns a function to disable the drag selection.
-     */
-    public enableDragSelection(options: Omit<RegionParams, 'start' | 'end'>, threshold = 3): () => void {
-        const wrapper = this.wavesurfer?.getWrapper()
-        if (!wrapper || !(wrapper instanceof HTMLElement)) return () => undefined
-
-        const initialSize = 5
-        let region: Region | null = null
-        let startX = 0
-
-        return makeDraggable(
-            wrapper,
-
-            // On drag move
-            (dx, _dy, x) => {
-                if (region) {
-                    // Update the end position of the region
-                    // If we're dragging to the left, we need to update the start instead
-                    region._onUpdate(dx, x > startX ? 'end' : 'start')
-                }
-            },
-
-            // On drag start
-            (x) => {
-                startX = x
-                if (!this.wavesurfer) return
-                const duration = this.wavesurfer.getDuration()
-                const numberOfChannels = this.wavesurfer?.getDecodedData()?.numberOfChannels
-                const { width } = this.wavesurfer.getWrapper().getBoundingClientRect()
-                // Calculate the start time of the region
-                const start = (x / width) * duration
-                // Give the region a small initial size
-                const end = ((x + initialSize) / width) * duration
-
-                // Create a region but don't save it until the drag ends
-                region = new SingleRegion(
-                    {
-                        ...options,
-                        start,
-                        end,
-                    },
-                    duration,
-                    numberOfChannels,
-                )
-                // Just add it to the DOM for now
-                this.regionsContainer.appendChild(region.element)
-            },
-
-            // On drag end
-            () => {
-                if (region) {
-                    this.saveRegion(region)
-                    region = null
-                }
-            },
-
-            threshold,
-        )
     }
 
     /** Remove all regions */
