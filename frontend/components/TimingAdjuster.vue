@@ -27,6 +27,8 @@ import { LYRIC_MARKERS } from "@/constants";
 function createLyricRegion(id: number, params): RegionParams {
   return {
     id: `segment_${id}`,
+    // The region plugin uses "channels" to display regions on different lines
+    channelIdx: id % 5,
     loop: false,
     drag: false,
     resize: true,
@@ -42,6 +44,7 @@ export default defineComponent({
     lyrics: String,
     timings: Array<LyricEvent>,
     audioData: Blob,
+    vocalTrack: { type: Blob, required: false },
   },
   data() {
     return {
@@ -94,7 +97,7 @@ export default defineComponent({
             start: time,
             end: null,
             content: lyricSegment,
-            color: "rgba(0, 0, 0, 0.5)",
+            color: "rgba(102, 209, 255, 1)",
           });
         } else if (marker === LYRIC_MARKERS.SEGMENT_END) {
           currentRegion.end = time;

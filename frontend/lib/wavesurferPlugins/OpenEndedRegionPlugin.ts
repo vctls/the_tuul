@@ -70,8 +70,8 @@ export type RegionParams = {
     resize?: boolean
     /** The color of the region (CSS color) */
     color?: string
-    /** Content string or HTML element */
-    content?: string | HTMLElement
+    /** Content string */
+    content?: string
     /** Min length when resizing (in seconds) */
     minLength?: number
     /** Max length when resizing (in seconds) */
@@ -239,21 +239,21 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
     }
 
     private initElement() {
-        const isMarker = this.start === this.end
+        const isMarker = this.start === this.end;
 
-        let elementTop = 0
-        let elementHeight = 100
+        let elementTop = 0;
+        let elementHeight = 'auto'; // Change to auto to fit content
 
         if (this.channelIdx >= 0 && this.channelIdx < this.numberOfChannels) {
-            elementHeight = 100 / this.numberOfChannels
-            elementTop = elementHeight * this.channelIdx
+            elementHeight = 'auto'; // Change to auto to fit content
+            elementTop = (100 / this.numberOfChannels) * this.channelIdx;
         }
 
         const element = createElement('div', {
             style: {
                 position: 'absolute',
                 top: `${elementTop}%`,
-                height: `${elementHeight}%`,
+                height: elementHeight, // Set height to auto
                 backgroundColor: isMarker ? 'none' : this.color,
                 borderLeft: isMarker ? '2px solid ' + this.color : 'none',
                 borderRadius: '2px',
@@ -261,16 +261,18 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
                 transition: 'background-color 0.2s ease',
                 cursor: 'default',
                 pointerEvents: 'all',
+                display: 'flex', // Add flex display
+                alignItems: 'center', // Center content vertically
             },
-        })
-        console.log('element', element)
+        });
+        console.log('element', element);
 
         // Add resize handles
         if (!isMarker && this.resize) {
-            this.addResizeHandles(element)
+            this.addResizeHandles(element);
         }
 
-        return element
+        return element;
     }
 
     private renderPosition() {
@@ -366,29 +368,29 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
     }
 
     /** Set the HTML content of the region */
-    public setContent(content: RegionParams['content']) {
-        this.content?.remove()
+    public setContent(content: string | undefined) {
+        this.content?.remove();
         if (!content) {
-            this.content = undefined
-            return
+            this.content = undefined;
+            return;
         }
-        if (typeof content === 'string') {
-            const isMarker = this.start === this.end
-            this.content = createElement('div', {
-                style: {
-                    padding: `0.2em ${isMarker ? 0.2 : 0.4}em`,
-                    display: 'inline-block',
-                },
-                textContent: content,
-            })
-        } else {
-            this.content = content
-        }
+        this.content = createElement('div', {
+            style: {
+                padding: `0em 0.2em`,
+                display: 'inline-block',
+                color: 'black',
+                whiteSpace: 'nowrap',    // Prevent line breaks
+                overflow: 'visible',      // Allow content to overflow
+                position: 'relative',     // Enable z-index
+                zIndex: '1',             // Ensure content stays below handle
+            },
+            textContent: content,
+        });
         if (this.contentEditable) {
-            this.content.contentEditable = 'true'
+            this.content.contentEditable = 'true';
         }
-        this.content.setAttribute('part', 'region-content')
-        this.element.appendChild(this.content)
+        this.content.setAttribute('part', 'region-content');
+        this.element.appendChild(this.content);
     }
 
     /** Update the region's options */
@@ -658,7 +660,7 @@ class RegionsPlugin extends BasePlugin<RegionsPluginEvents, RegionsPluginOptions
         }
 
         const duration = this.wavesurfer.getDuration()
-        const numberOfChannels = this.wavesurfer?.getDecodedData()?.numberOfChannels
+        const numberOfChannels = 5; // this.wavesurfer?.getDecodedData()?.numberOfChannels
         const region = new SingleRegion(options, duration, numberOfChannels)
 
         if (!duration) {
