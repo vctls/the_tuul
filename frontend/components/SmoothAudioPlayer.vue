@@ -1,0 +1,67 @@
+<template>
+  <audio
+    ref="audioPlayer"
+    v-bind="$attrs"
+    @play="startTimeUpdateLoop($event)"
+    @pause="onPause"
+    @seeking="$emit('seeking', $event)"
+    @error="$emit('error', $event)"
+  ></audio>
+</template>
+
+<script lang="ts">
+// A wrapper for an audio element that emits timeupdate events more frequently
+import { defineComponent } from "vue";
+
+export default defineComponent({
+  inheritAttrs: false,
+  emits: ["timeupdate", "seeking", "error", "play", "pause"],
+  data() {
+    return {
+      animationFrameId: null as number | null,
+      lastTime: 0,
+    };
+  },
+  methods: {
+    setCurrentTime(time: number) {
+      const audio = this.$refs.audioPlayer as HTMLAudioElement;
+      audio.currentTime = time;
+    },
+    startTimeUpdateLoop(event: Event) {
+      this.$emit("play", event);
+      const updateTime = () => {
+        const audio = this.$refs.audioPlayer as HTMLAudioElement;
+        const timeUpdateEvent = new Event("timeupdate");
+        Object.defineProperty(timeUpdateEvent, "target", { value: audio });
+
+        if (audio.currentTime !== this.lastTime) {
+          this.$emit("timeupdate", timeUpdateEvent);
+          this.lastTime = audio.currentTime;
+        }
+
+        if (audio.paused) {
+          this.stopTimeUpdateLoop();
+          return;
+        }
+
+        this.animationFrameId = requestAnimationFrame(updateTime);
+      };
+
+      this.animationFrameId = requestAnimationFrame(updateTime);
+    },
+    onPause(event: Event) {
+      this.stopTimeUpdateLoop();
+      this.$emit("pause", event);
+    },
+    stopTimeUpdateLoop() {
+      if (this.animationFrameId !== null) {
+        cancelAnimationFrame(this.animationFrameId);
+        this.animationFrameId = null;
+      }
+    },
+  },
+  beforeUnmount() {
+    this.stopTimeUpdateLoop();
+  },
+});
+</script>

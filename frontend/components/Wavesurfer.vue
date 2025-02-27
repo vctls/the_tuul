@@ -15,7 +15,7 @@ export default defineComponent({
   props: {
     audioData: {
       type: Blob,
-      required: true,
+      required: false,
     },
     cursorColor: {
       type: String,
@@ -72,6 +72,11 @@ export default defineComponent({
 
     this.wavesurfer.on("seeking", (time: number) => {
       this.$emit("seeking", time);
+    });
+
+    this.wavesurfer.on("click", (x: number, y: number) => {
+      const newX = x * this.wavesurfer.getDuration();
+      this.$emit("click", newX, y);
     });
 
     this.wavesurfer.on("timeupdate", (time: number) => {
