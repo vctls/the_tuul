@@ -24,7 +24,8 @@
       ref="timing-adjuster"
       :lyrics="lyrics"
       :timings="timings"
-      :audioData="musicSeparationStore.audioData"
+      :audioData="songFile"
+      :vocalTrack="vocalTrack"
       @input="onTimingsChange"
       @timeupdate="onPlayheadUpdate"
       @seeking="onPlayheadUpdate"
@@ -63,6 +64,11 @@ export default defineComponent({
     };
   },
   computed: {
+    vocalTrack(): Blob | null {
+      // TODO: Use the vocal track from the music separation store
+      let blobUrl = this.musicSeparationStore.separatedTrack?.vocals;
+      return blobUrl;
+    },
     subtitles() {
       return createAssFile(
         this.lyrics,

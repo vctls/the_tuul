@@ -1,13 +1,23 @@
 <template>
   <div>
+    <smooth-audio-player
+      ref="audioPlayer"
+      controls
+      :src="audioSource"
+      @timeupdate="onAudioTimeUpdate"
+      @seeking="onAudioSeeking"
+      @play="onAudioPlay"
+      @pause="onAudioPause"
+      @error="onAudioError"
+    />
     <wavesurfer
       ref="wavesurfer"
       :audioData="audioData"
       :regions="regions"
-      :mediaControls="true"
+      :mediaControls="false"
       @region-updated="onRegionUpdated"
-      @timeupdate="onTimeUpdate"
-      @seeking="onSeeking"
+      @timeupdate="onWavesurferTimeUpdate"
+      @click="onWavesurferSeeking"
     />
   </div>
 </template>
@@ -20,6 +30,7 @@ import {
   Region,
 } from "@/lib/wavesurferPlugins/OpenEndedRegionPlugin";
 import Wavesurfer from "@/components/Wavesurfer.vue";
+import SmoothAudioPlayer from "./SmoothAudioPlayer.vue";
 
 import { LyricEvent, adjustSegmentTiming } from "@/lib/timing";
 import { LYRIC_MARKERS } from "@/constants";
@@ -39,6 +50,7 @@ function createLyricRegion(id: number, params): RegionParams {
 export default defineComponent({
   components: {
     Wavesurfer,
+    SmoothAudioPlayer,
   },
   props: {
     lyrics: String,
@@ -49,6 +61,7 @@ export default defineComponent({
   data() {
     return {
       regions: [],
+      audioSource: null as string | null,
     };
   },
   computed: {
@@ -65,6 +78,9 @@ export default defineComponent({
   },
   mounted() {
     this.regions = this.createRegions(this.timings, this.splitLyrics);
+    if (this.audioData) {
+      this.audioSource = URL.createObjectURL(this.audioData);
+    }
   },
   watch: {
     timings(newTimings: Array<LyricEvent>) {
@@ -72,6 +88,14 @@ export default defineComponent({
     },
     lyrics(newLyrics: String) {
       this.regions = this.createRegions(this.timings, this.splitLyrics);
+    },
+    audioData(newAudioData: Blob) {
+      if (newAudioData) {
+        if (this.audioSource) {
+          URL.revokeObjectURL(this.audioSource);
+        }
+        this.audioSource = URL.createObjectURL(newAudioData);
+      }
     },
   },
   methods: {
@@ -130,7 +154,7 @@ export default defineComponent({
     previewNewTiming(region: Region) {
       // When a timing changes, set the playhead 5 seconds before the changed region
       const newPlayhead = Math.max(0, region.start - 5);
-      this.setPlayhead(newPlayhead);
+      this.setAudioPlayhead(newPlayhead);
     },
     onTimeUpdate(time: number) {
       this.$emit("timeupdate", time);
@@ -138,11 +162,61 @@ export default defineComponent({
     onSeeking(time: number) {
       this.$emit("seeking", time);
     },
-    setPlayhead(playhead: number) {
-      if (playhead != this.$refs.wavesurfer.getCurrentTime()) {
-        this.$refs.wavesurfer.setTime(playhead);
-      }
+    setAdjusterPlayhead(playhead: number) {
+      this.$refs.wavesurfer.setTime(playhead);
     },
+    setAudioPlayhead(playhead: number) {
+      this.$refs.audioPlayer.setCurrentTime(playhead);
+    },
+    onAudioTimeUpdate(event: Event) {
+      const time = (event.target as HTMLAudioElement).currentTime;
+      this.setAdjusterPlayhead(time);
+      this.$emit("timeupdate", time);
+    },
+    onAudioSeeking(event: Event) {
+      const time = (event.target as HTMLAudioElement).currentTime;
+      this.setAdjusterPlayhead(time);
+      this.$emit("seeking", time);
+    },
+    onWavesurferTimeUpdate(time: number) {
+      // if (Math.abs(this.$refs.audioPlayer.currentTime - time) > 0.1) {
+      //   this.setPlayhead(time);
+      // }
+    },
+    onWavesurferSeeking(time: number) {
+      console.log("Wavesurfer seeking", time);
+      this.setAudioPlayhead(time);
+    },
+    onWavesurferSeeked(time: number) {
+      this.setAudioPlayhead(time);
+    },
+    onAudioPlay() {
+      // this.$refs.wavesurfer.play();
+    },
+    onAudioPause() {
+      this.$refs.wavesurfer.pause();
+    },
+    onAudioError(event: Event) {
+      const audio = event.target as HTMLAudioElement;
+      console.error("Audio loading error:", {
+        error: audio.error,
+        currentSrc: audio.currentSrc,
+        readyState: audio.readyState,
+        networkState: audio.networkState,
+      });
+    },
+  },
+  beforeUnmount() {
+    if (this.audioSource) {
+      URL.revokeObjectURL(this.audioSource);
+    }
   },
 });
 </script>
+
+<style scoped>
+audio {
+  width: 100%;
+  margin-bottom: 1em;
+}
+</style>
