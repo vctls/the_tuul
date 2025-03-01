@@ -1,5 +1,8 @@
 <template>
-  <div ref="wavesurfer-container" class="wavesurfer-container"></div>
+  <div
+    ref="wavesurfer-container"
+    :class="['wavesurfer-container', { 'hide-waveform': !showWaveform }]"
+  ></div>
 </template>
 
 <script lang="ts">
@@ -40,6 +43,10 @@ export default defineComponent({
     waveColor: {
       type: String,
       default: "rgba(0, 0, 0, 0.1)",
+    },
+    showWaveform: {
+      type: Boolean,
+      default: true,
     },
   },
   data() {
@@ -102,11 +109,9 @@ export default defineComponent({
       }
     },
     regions(newRegions) {
-      console.log("regions changed", newRegions);
       // // Add regions after audio is decoded or they won't render right
       this.wavesurfer.on("decode", () => {
         for (const region of this.regions) {
-          console.log(region);
           this.regionsPlugin.addRegion(region);
         }
       });
@@ -150,3 +155,10 @@ export default defineComponent({
   },
 });
 </script>
+
+<style>
+.wavesurfer-container.hide-waveform ::part(canvases),
+.wavesurfer-container.hide-waveform ::part(progress) {
+  visibility: hidden;
+}
+</style>

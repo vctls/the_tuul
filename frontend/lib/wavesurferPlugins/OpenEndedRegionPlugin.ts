@@ -104,7 +104,6 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
     }
 
     set end(time: number | undefined) {
-        console.log(`Setting end for ${this.content?.innerText} to ${time}`)
         this._explicitEnd = time
     }
 
@@ -113,7 +112,6 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
     }
 
     set nextRegion(region: Region | undefined) {
-        console.log(`Setting next region for ${this.content?.innerText} to ${region?.content.innerText}`)
         this._nextRegion = region
         // @todo how to unsubscribe?
         this.subscriptions.push(this.nextRegion.on('update', () => this.onNeighborMoved('next')))
@@ -265,7 +263,6 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
                 alignItems: 'center', // Center content vertically
             },
         });
-        console.log('element', element);
 
         // Add resize handles
         if (!isMarker && this.resize) {

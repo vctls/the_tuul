@@ -15,6 +15,7 @@
       :audioData="audioData"
       :regions="regions"
       :mediaControls="false"
+      :showWaveform="false"
       @region-updated="onRegionUpdated"
       @timeupdate="onWavesurferTimeUpdate"
       @click="onWavesurferSeeking"
@@ -130,11 +131,9 @@ export default defineComponent({
       if (currentRegion) {
         regions.push(currentRegion);
       }
-      console.log(regions);
       return regions;
     },
     onRegionUpdated(region: Region) {
-      console.log("TimingAdjuster: Region updated", region.id, region);
       const newTimings = this.applyRegionUpdateToTimings(region, this.timings);
       this.$emit("input", newTimings);
       this.$nextTick(() => {
