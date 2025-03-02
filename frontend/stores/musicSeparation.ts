@@ -6,9 +6,9 @@ import { SeparationModel } from '@/types';
 
 export interface SeparatedTrack {
     // Blob URL of the separated backing track
-    backing: string;
+    backing: Blob;
     // Blob URL of the separated vocals track
-    vocals: string;
+    vocals: Blob;
 }
 
 export const BACKING_VOCALS_SEPARATOR_MODEL = "UVR_MDXNET_KARA_2.onnx";
@@ -43,7 +43,7 @@ export const useMusicSeparationStore = defineStore('musicSeparation', () => {
 
     async function setBackingTrack(file: File) {
         if (separatedTrack.value == null) {
-            separatedTrack.value = { backing: URL.createObjectURL(file), vocals: '' };
+            separatedTrack.value = { backing: file, vocals: new Blob() };
         } else if (resolveResult) {
             resolveResult(URL.createObjectURL(file));
         } else {

@@ -90,6 +90,10 @@ export default defineComponent({
       this.$emit("timeupdate", time);
     });
 
+    this.wavesurfer.on("error", (err: Error) => {
+      console.error("Wavesurfer error", err);
+    });
+
     this.regionsPlugin.on("region-updated", (region: Region) => {
       this.$emit("region-updated", region);
     });
@@ -105,15 +109,17 @@ export default defineComponent({
   watch: {
     audioData(newAudioData: Blob) {
       if (this.wavesurfer) {
+        console.log("loading new audio data", newAudioData);
         this.wavesurfer.loadBlob(newAudioData);
       }
     },
     regions(newRegions) {
       // // Add regions after audio is decoded or they won't render right
-      this.wavesurfer.on("decode", () => {
+      const unsubscribe = this.wavesurfer.on("decode", () => {
         for (const region of this.regions) {
           this.regionsPlugin.addRegion(region);
         }
+        unsubscribe();
       });
       // if (this.wavesurfer) {
       //   this.regionsPlugin.clearRegions();

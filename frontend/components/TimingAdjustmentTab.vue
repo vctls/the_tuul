@@ -65,9 +65,7 @@ export default defineComponent({
   },
   computed: {
     vocalTrack(): Blob | null {
-      // TODO: Use the vocal track from the music separation store
-      let blobUrl = this.musicSeparationStore.separatedTrack?.vocals;
-      return blobUrl;
+      return this.musicSeparationStore.separatedTrack?.vocals || null;
     },
     subtitles() {
       return createAssFile(

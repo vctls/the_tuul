@@ -4,12 +4,12 @@ import { SeparationModel } from "@/types";
 
 // Functions for working with audio files and streams
 export interface TrackSeparationResult {
-    backing: string; // Blob URL of backing track
-    vocals: string; // Blob URL of vocals track
+    backing: Blob; // Blob of backing track
+    vocals: Blob; // Blob of vocals track
 }
 
 export async function separateTrack(songFile: File, modelName: SeparationModel): Promise<TrackSeparationResult> {
-    // Separate the track and return a blob url of the accompaniment stem data
+    // Separate the track and return a blob of the accompaniment stem data
     const formData = new FormData();
     formData.append("songFile", songFile);
     formData.append("modelName", modelName);
@@ -21,13 +21,15 @@ export async function separateTrack(songFile: File, modelName: SeparationModel):
     const zipContents = await response.blob();
     console.log("Received separated audio. Unzipping...");
     const zip = await jszip.loadAsync(zipContents);
-    const contents = await zip.file("accompaniment.wav").async("blob");
-    const backingUrl = URL.createObjectURL(contents);
-    const vocals = await zip.file("vocals.wav").async("blob");
-    const vocalsUrl = URL.createObjectURL(vocals);
-    console.log("Got backing URL: ", backingUrl);
+    const accompaniment = await zip.file("accompaniment.wav").async("blob").then((blob) => {
+        return new Blob([blob], { type: "audio/wav" });
+    });
 
-    return { backing: backingUrl, vocals: vocalsUrl };
+    const vocals = await zip.file("vocals.wav").async("blob").then((blob) => {
+        return new Blob([blob], { type: "audio/wav" });
+    });
+
+    return { backing: accompaniment, vocals: vocals };
 }
 
 export default { separateTrack }
