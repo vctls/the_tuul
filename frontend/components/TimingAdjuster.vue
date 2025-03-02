@@ -12,10 +12,10 @@
     />
     <wavesurfer
       ref="wavesurfer"
-      :audioData="audioData"
+      :audioData="vocalTrack || audioData"
       :regions="regions"
       :mediaControls="false"
-      :showWaveform="false"
+      :showWaveform="Boolean(vocalTrack)"
       @region-updated="onRegionUpdated"
       @timeupdate="onWavesurferTimeUpdate"
       @click="onWavesurferSeeking"
@@ -57,6 +57,7 @@ export default defineComponent({
     lyrics: String,
     timings: Array<LyricEvent>,
     audioData: Blob,
+    // URL to the vocal track audio file
     vocalTrack: { type: Blob, required: false },
   },
   data() {

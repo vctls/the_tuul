@@ -86,11 +86,11 @@ import {
   BACKING_VOCALS_SEPARATOR_MODEL,
   useMusicSeparationStore,
 } from "@/stores/musicSeparation";
-import mountedHarness from "@/mountedHarness";
+// import mountedHarness from "@/mountedHarness";
 import { LyricEvent } from "./lib/timing";
 
 export default defineComponent({
-  mixins: [mountedHarness],
+  // mixins: [mountedHarness],
   components: {
     HelpTab,
     SongInfoTab,
@@ -141,7 +141,6 @@ export default defineComponent({
   },
   methods: {
     onTimingsComplete(timings: Array<LyricEvent>) {
-      console.log("App: timings", timings);
       this.timings = timings;
     },
     onOptionsChange(newOptions) {
