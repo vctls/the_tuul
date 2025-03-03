@@ -42,12 +42,6 @@
       </template>
     </b-navbar>
     <b-tabs expanded :vertical="!isMobile" type="is-boxed" class="main-tabs">
-      <timing-adjustment-tab
-        :lyrics="lyricText"
-        :timings="timings"
-        :songFile="songInfo.file"
-        @input="onTimingsComplete"
-      />
       <help-tab></help-tab>
       <song-info-tab
         v-model="songInfo"
@@ -61,6 +55,12 @@
         :lyric-segments="lyricSegments"
         :timings="timings"
       ></song-timing-tab>
+      <timing-adjustment-tab
+        :lyrics="lyricText"
+        :timings="timings"
+        :songFile="songInfo.file"
+        @input="onTimingsComplete"
+      />
       <submit-tab
         :song-info="songInfo"
         :lyric-text="lyricText"

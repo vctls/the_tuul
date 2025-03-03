@@ -15,7 +15,7 @@
       :audioData="vocalTrack || audioData"
       :regions="regions"
       :mediaControls="false"
-      :showWaveform="Boolean(vocalTrack)"
+      :showWaveform="true || Boolean(vocalTrack)"
       @region-updated="onRegionUpdated"
       @timeupdate="onWavesurferTimeUpdate"
       @click="onWavesurferSeeking"

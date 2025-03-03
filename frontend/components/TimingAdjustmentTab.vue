@@ -68,18 +68,23 @@ export default defineComponent({
       return this.musicSeparationStore.separatedTrack?.vocals || null;
     },
     subtitles() {
-      return createAssFile(
-        this.lyrics,
-        this.timings,
-        this.songFile.duration,
-        "",
-        "",
-        {
-          ...DEFAULT_KARAOKE_OPTIONS,
-          addTitleScreen: false,
-          addCountIns: false,
-        }
-      );
+      try {
+        return createAssFile(
+          this.lyrics,
+          this.timings,
+          this.songFile.duration,
+          "",
+          "",
+          {
+            ...DEFAULT_KARAOKE_OPTIONS,
+            addTitleScreen: false,
+            addCountIns: false,
+          }
+        );
+      } catch (e) {
+        console.error("Failed to create subtitles", e);
+        return "";
+      }
     },
   },
   watch: {

@@ -52,14 +52,35 @@ export default defineComponent({
   data() {
     return {
       wavesurfer: null as WaveSurfer | null,
-      regionsPlugin: null as RegionsPlugin | null,
+      regionsPlugin: RegionsPlugin.create(),
+      isVisible: false,
+      _observer: null as IntersectionObserver | null,
     };
   },
   mounted() {
-    this.regionsPlugin = RegionsPlugin.create();
+    // Create an observer for the wavesurfer container
+    this._observer = new IntersectionObserver(
+      ([entry]) => {
+        const wasVisible = this.isVisible;
+        this.isVisible = entry.isIntersecting;
+
+        // If becoming visible and we have regions, redraw them
+        if (!wasVisible && this.isVisible && this.regions.length > 0) {
+          console.log("Wavesurfer became visible, updating regions");
+          this.$nextTick(() => {
+            this.updateRegions(this.regions);
+          });
+        }
+      },
+      {
+        threshold: 0,
+      }
+    );
+
+    // Start observing the container
+    this._observer.observe(this.$refs["wavesurfer-container"] as HTMLElement);
 
     this.wavesurfer = WaveSurfer.create({
-      autoScroll: true,
       container: this.$refs["wavesurfer-container"] as HTMLElement,
       cursorColor: this.cursorColor,
       cursorWidth: this.cursorWidth,
@@ -72,7 +93,7 @@ export default defineComponent({
       height: 100,
       minPxPerSec: this.minPxPerSec,
       //   responsive: true,
-      normalize: true,
+      normalize: false,
       plugins: [this.regionsPlugin],
     });
     this.wavesurfer.loadBlob(this.audioData);
@@ -114,21 +135,18 @@ export default defineComponent({
       }
     },
     regions(newRegions) {
-      // // Add regions after audio is decoded or they won't render right
-      const unsubscribe = this.wavesurfer.on("decode", () => {
-        for (const region of this.regions) {
-          this.regionsPlugin.addRegion(region);
-        }
-        unsubscribe();
-      });
-      // if (this.wavesurfer) {
-      //   this.regionsPlugin.clearRegions();
-      //   this.$nextTick(() => {
-      //     for (const region of newRegions) {
-      //       this.regionsPlugin.addRegion(region);
-      //     }
-      //   });
-      // }
+      // Add regions after audio is decoded or they won't render right
+      console.log("updating regions", newRegions.length);
+      if (this.isReady()) {
+        console.log("immediate", newRegions.length);
+        this.updateRegions(newRegions);
+      } else {
+        const unsubscribe = this.wavesurfer.on("ready", () => {
+          console.log("ready", this);
+          this.updateRegions(newRegions);
+          unsubscribe();
+        });
+      }
     },
   },
   methods: {
@@ -153,8 +171,30 @@ export default defineComponent({
       }
       return 0;
     },
+    isReady() {
+      return (
+        this.wavesurfer && this.isVisible && this.wavesurfer.getDecodedData()
+      );
+    },
+    updateRegions(regions: Region[]) {
+      if (this.wavesurfer) {
+        this.regionsPlugin.clearRegions();
+        this.$nextTick(() => {
+          console.log("component: adding regions", regions.length);
+          for (const region of regions) {
+            console.log("component: adding region", region);
+            try {
+              this.regionsPlugin.addRegion(region);
+            } catch (e) {
+              console.error("Failed to add region", e);
+            }
+          }
+        });
+      }
+    },
   },
   beforeUnmount() {
+    this._observer?.disconnect();
     if (this.wavesurfer) {
       this.wavesurfer.destroy();
     }
