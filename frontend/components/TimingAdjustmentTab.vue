@@ -14,13 +14,13 @@
     </div>
     <subtitle-display
       class="subtitle-display"
-      v-if="songFile"
+      v-if="songFile && subtitles"
       ref="subtitleDisplay"
       :subtitles="subtitles"
       :fonts="{}"
     />
     <timing-adjuster
-      v-if="songFile"
+      v-if="songFile && subtitles"
       ref="timing-adjuster"
       :lyrics="lyrics"
       :timings="timings"
@@ -50,6 +50,7 @@ export default defineComponent({
     lyrics: String,
     timings: Array,
     songFile: { type: Blob, required: false },
+    enabled: { type: Boolean, default: true },
   },
   setup() {
     const musicSeparationStore = useMusicSeparationStore();
@@ -69,6 +70,9 @@ export default defineComponent({
     },
     subtitles() {
       try {
+        if (!this.timings) {
+          return "";
+        }
         return createAssFile(
           this.lyrics,
           this.timings,

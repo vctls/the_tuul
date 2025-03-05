@@ -60,6 +60,7 @@
         :timings="timings"
         :songFile="songInfo.file"
         @input="onTimingsComplete"
+        :enabled="isReadyToSubmit"
       />
       <submit-tab
         :song-info="songInfo"
@@ -119,6 +120,7 @@ export default defineComponent({
         videoBlob: null,
       },
       musicSeparationModel: BACKING_VOCALS_SEPARATOR_MODEL,
+      areTimingsFinished: false,
       isSubmitting: false,
       // Array of lyric timings
       timings: null,
@@ -134,7 +136,7 @@ export default defineComponent({
         this.songInfo &&
         this.songInfo.file &&
         this.lyricText.length > 0 &&
-        this.timings != null
+        this.areTimingsFinished
       );
     },
     isMobile,
@@ -142,6 +144,7 @@ export default defineComponent({
   methods: {
     onTimingsComplete(timings: Array<LyricEvent>) {
       this.timings = timings;
+      this.areTimingsFinished = true;
     },
     onOptionsChange(newOptions) {
       for (const key in newOptions) {
