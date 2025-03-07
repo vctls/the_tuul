@@ -593,7 +593,6 @@ class RegionsPlugin extends BasePlugin<RegionsPluginEvents, RegionsPluginOptions
         // Ensure linked list integrity and print region contents
         let region = this.firstRegion
         while (region) {
-            console.log(region.id, region.start, region.end)
             if (region.prevRegion && region.prevRegion.nextRegion !== region) {
                 console.error(`Invalid linked list: ${region.prevRegion.nextRegion?.id} should be ${region.id}`);
             }
