@@ -112,10 +112,25 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
     }
 
     set nextRegion(region: Region | undefined) {
-        this._nextRegion = region
-        // @todo how to unsubscribe?
-        this.subscriptions.push(this.nextRegion.on('update', () => this.onNeighborMoved('next')))
-        this.renderPosition()
+        // Clean up old subscription if it exists
+        if (this._nextRegion) {
+            const index = this.subscriptions.findIndex(sub =>
+                sub.toString().includes('onNeighborMoved')
+            );
+            if (index !== -1) {
+                this.subscriptions[index]();
+                this.subscriptions.splice(index, 1);
+            }
+        }
+
+        this._nextRegion = region;
+        if (region) {
+            // Add new subscription
+            this.subscriptions.push(
+                region.on('update', () => this.onNeighborMoved('next'))
+            );
+        }
+        this.renderPosition();
     }
 
     get prevRegion() {
@@ -259,8 +274,6 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
                 transition: 'background-color 0.2s ease',
                 cursor: 'default',
                 pointerEvents: 'all',
-                display: 'flex', // Add flex display
-                alignItems: 'center', // Center content vertically
             },
         });
 
@@ -427,12 +440,28 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
 
     /** Remove the region */
     public remove() {
-        this.emit('remove')
-        this.subscriptions.forEach((unsubscribe) => unsubscribe())
-        this.element.remove()
-        // This violates the type but we want to clean up the DOM reference
-        // w/o having to have a nullable type of the element
-        this.element = null as unknown as HTMLElement
+        console.log('remove', this.id);
+        // Clean up subscriptions before removing element
+        this.subscriptions.forEach((unsubscribe) => unsubscribe());
+        this.subscriptions = [];
+
+        // todo: fix firstRegion in plugin
+        if (this.prevRegion) {
+            this.prevRegion.nextRegion = this.nextRegion;
+        }
+        if (this.nextRegion) {
+            this.nextRegion.prevRegion = this.prevRegion;
+        }
+        // Clear the region's references
+        this.nextRegion = undefined;
+        this.prevRegion = undefined;
+
+        this.emit('remove');
+        if (this.element) {
+            this.element.remove();
+            // This violates the type but we want to clean up the DOM reference
+            this.element = null as unknown as HTMLElement;
+        }
     }
 }
 
@@ -557,6 +586,25 @@ class RegionsPlugin extends BasePlugin<RegionsPluginEvents, RegionsPluginOptions
             newRegion.nextRegion = nextRegion
             nextRegion.prevRegion = newRegion
         }
+        this.checkRegions();
+    }
+
+    public checkRegions() {
+        // Ensure linked list integrity and print region contents
+        let region = this.firstRegion
+        while (region) {
+            console.log(region.id, region.start, region.end)
+            if (region.prevRegion && region.prevRegion.nextRegion !== region) {
+                console.error(`Invalid linked list: ${region.prevRegion.nextRegion?.id} should be ${region.id}`);
+            }
+            if (region.nextRegion && region.nextRegion.prevRegion !== region) {
+                console.error(`Invalid linked list: ${region.nextRegion.prevRegion?.id} should be ${region.id}`);
+            }
+            if (region.nextRegion && region.nextRegion.start < region.start) {
+                console.error('Invalid linked list')
+            }
+            region = region.nextRegion
+        }
     }
 
     private adjustScroll(region: Region) {
@@ -677,6 +725,8 @@ class RegionsPlugin extends BasePlugin<RegionsPluginEvents, RegionsPluginOptions
     /** Remove all regions */
     public clearRegions() {
         this.regions.forEach((region) => region.remove())
+        this.regions = []
+        this.firstRegion = undefined;
     }
 
     /** Destroy the plugin and clean up */

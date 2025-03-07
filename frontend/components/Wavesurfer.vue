@@ -138,11 +138,9 @@ export default defineComponent({
       // Add regions after audio is decoded or they won't render right
       console.log("updating regions", newRegions.length);
       if (this.isReady()) {
-        console.log("immediate", newRegions.length);
         this.updateRegions(newRegions);
       } else {
         const unsubscribe = this.wavesurfer.on("ready", () => {
-          console.log("ready", this);
           this.updateRegions(newRegions);
           unsubscribe();
         });
@@ -172,25 +170,26 @@ export default defineComponent({
       return 0;
     },
     isReady() {
-      return (
-        this.wavesurfer && this.isVisible && this.wavesurfer.getDecodedData()
-      );
+      return this.wavesurfer && this.wavesurfer.getDecodedData();
     },
     updateRegions(regions: Region[]) {
-      if (this.wavesurfer) {
-        this.regionsPlugin.clearRegions();
-        this.$nextTick(() => {
-          console.log("component: adding regions", regions.length);
+      if (!this.wavesurfer || !this.isVisible) return;
+
+      // Clear regions first
+      this.regionsPlugin.clearRegions();
+
+      // Wait for next tick to ensure DOM is updated
+      this.$nextTick(() => {
+        if (this.isVisible && this.wavesurfer) {
           for (const region of regions) {
-            console.log("component: adding region", region);
             try {
               this.regionsPlugin.addRegion(region);
             } catch (e) {
               console.error("Failed to add region", e);
             }
           }
-        });
-      }
+        }
+      });
     },
   },
   beforeUnmount() {
