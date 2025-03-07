@@ -49,7 +49,7 @@ export default defineComponent({
   props: {
     lyrics: String,
     timings: Array,
-    songFile: { type: Blob, required: false },
+    songInfo: Object,
     enabled: { type: Boolean, default: true },
   },
   setup() {
@@ -65,10 +65,14 @@ export default defineComponent({
     };
   },
   computed: {
+    songFile(): Blob | null {
+      return this.songInfo.file || null;
+    },
     vocalTrack(): Blob | null {
       return this.musicSeparationStore.separatedTrack?.vocals || null;
     },
     subtitles() {
+      console.log("Creating subtitles", this);
       try {
         if (!this.timings) {
           return "";
@@ -76,7 +80,7 @@ export default defineComponent({
         return createAssFile(
           this.lyrics,
           this.timings,
-          this.songFile.duration,
+          this.songInfo.duration,
           "",
           "",
           {

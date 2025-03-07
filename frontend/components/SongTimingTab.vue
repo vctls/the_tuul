@@ -195,9 +195,11 @@ export default defineComponent({
       } else if (keyCode == KEY_CODES.SPACEBAR) {
         this.advanceToNextSegment(keyCode, currentSongTime);
       }
-      if (this.hasMarkedEndOfLastLine) {
-        this.$emit("timings-complete", this.timings.toArray());
-      }
+      this.$emit(
+        "timings-change",
+        this.timings.toArray(),
+        this.hasMarkedEndOfLastLine
+      );
     },
     advanceToNextSegment(keyCode, currentSongTime) {
       if (this.currentSegment >= this.lyricSegments.length) {
