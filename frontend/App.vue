@@ -150,6 +150,8 @@ export default defineComponent({
       for (const key in newOptions) {
         if (key == "backingTrack") {
           this.musicSeparationStore.setBackingTrack(newOptions[key]);
+        } else if (key == "timings") {
+          this.onTimingsComplete(newOptions[key]);
         } else if (Object.hasOwnProperty.call(newOptions, key)) {
           const newValue = newOptions[key];
           this[key] = newValue;
