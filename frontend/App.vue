@@ -50,11 +50,18 @@
       ></song-info-tab>
       <lyric-input-tab v-model="lyricText"></lyric-input-tab>
       <song-timing-tab
-        @timings-complete="onTimingsComplete"
+        @timings-change="onTimingsChange"
         :song-info="songInfo"
         :lyric-segments="lyricSegments"
         :timings="timings"
       ></song-timing-tab>
+      <timing-adjustment-tab
+        :lyrics="lyricText"
+        :timings="timings"
+        :songInfo="songInfo"
+        @input="onTimingsChange"
+        :enabled="timings && timings.length > 0"
+      />
       <submit-tab
         :song-info="songInfo"
         :lyric-text="lyricText"
@@ -74,12 +81,14 @@ import HelpTab from "@/components/HelpTab.vue";
 import SongInfoTab from "@/components/SongInfoTab.vue";
 import LyricInputTab from "@/components/LyricInputTab.vue";
 import SongTimingTab from "@/components/SongTimingTab.vue";
+import TimingAdjustmentTab from "@/components/TimingAdjustmentTab.vue";
 import SubmitTab from "@/components/SubmitTab.vue";
 import {
   BACKING_VOCALS_SEPARATOR_MODEL,
   useMusicSeparationStore,
 } from "@/stores/musicSeparation";
 // import mountedHarness from "@/mountedHarness";
+import { LyricEvent } from "./lib/timing";
 
 export default defineComponent({
   // mixins: [mountedHarness],
@@ -88,6 +97,7 @@ export default defineComponent({
     SongInfoTab,
     LyricInputTab,
     SongTimingTab,
+    TimingAdjustmentTab,
     SubmitTab,
   },
   setup() {
@@ -110,6 +120,7 @@ export default defineComponent({
         videoBlob: null,
       },
       musicSeparationModel: BACKING_VOCALS_SEPARATOR_MODEL,
+      areTimingsFinished: false,
       isSubmitting: false,
       // Array of lyric timings
       timings: null,
@@ -125,19 +136,24 @@ export default defineComponent({
         this.songInfo &&
         this.songInfo.file &&
         this.lyricText.length > 0 &&
-        this.timings != null
+        this.areTimingsFinished
       );
     },
     isMobile,
   },
   methods: {
-    onTimingsComplete(timings) {
+    onTimingsChange(timings: Array<LyricEvent>, areTimingsFinished: boolean) {
       this.timings = timings;
+      if (typeof areTimingsFinished === "boolean") {
+        this.areTimingsFinished = areTimingsFinished;
+      }
     },
     onOptionsChange(newOptions) {
       for (const key in newOptions) {
         if (key == "backingTrack") {
           this.musicSeparationStore.setBackingTrack(newOptions[key]);
+        } else if (key == "timings") {
+          this.onTimingsChange(newOptions[key]);
         } else if (Object.hasOwnProperty.call(newOptions, key)) {
           const newValue = newOptions[key];
           this[key] = newValue;
