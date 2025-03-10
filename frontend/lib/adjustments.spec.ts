@@ -4,6 +4,7 @@ import { testLyrics, shortIntroTestEvents } from "./timing.spec";
 import { LYRIC_MARKERS } from "../constants";
 
 const DEFAULT_OPTIONS: KaraokeOptions = {
+    addTitleScreen: true,
     addCountIns: true,
     addInstrumentalScreens: true,
     addStaggeredLines: true,

@@ -3,21 +3,14 @@
     <b-message type="is-info">
       Audio in this preview includes vocals, but the finished video won't.
     </b-message>
-    <div class="video-container">
-      <video
-        class="background-video"
-        v-if="videoBlob"
-        ref="video"
-        :src="videoDataUrl"
-      />
-      <canvas
-        class="subtitle-canvas"
-        ref="subtitleCanvas"
-        :style="{
-          backgroundColor: videoBlob ? 'transparent' : backgroundColor,
-        }"
-      ></canvas>
-    </div>
+    <subtitle-display
+      ref="subtitleDisplay"
+      :subtitles="subtitles"
+      :audioDelay="audioDelay"
+      :fonts="fonts"
+      :backgroundColor="backgroundColor"
+      :videoBlob="videoBlob"
+    />
     <audio
       ref="player"
       controls
@@ -39,9 +32,10 @@
 import * as _ from "lodash";
 import { defineComponent } from "vue";
 import bufferToWav from "audiobuffer-to-wav";
-import SubtitlesOctopus from "libass-wasm";
+import SubtitleDisplay from "./SubtitleDisplay.vue";
 
 export default defineComponent({
+  components: { SubtitleDisplay },
   props: {
     songFile: {
       type: Blob,
@@ -69,58 +63,24 @@ export default defineComponent({
   },
   data() {
     return {
-      subtitleManager: null,
       audioDataUrl: "",
     };
   },
   mounted() {
-    const canvas = this.$refs.subtitleCanvas;
-    // SubtitleOctopus expects font names to be lowercase
-    const fontMap = _.mapKeys(this.fonts, (_, key) => key.toLowerCase());
-    // Create a subtitle renderer and tie it to our player and canvas
-    // console.log(fontMap);
-    const workerUrl = new URL(
-      "libass-wasm/dist/js/subtitles-octopus-worker.js",
-      import.meta.url
-    ); // Link to WebAssembly-based file "libassjs-worker.js"
-    const workerObjectUrl = URL.createObjectURL(
-      new Blob([`importScripts("${workerUrl.toString()}")`], {
-        type: "application/javascript",
-      })
-    );
-    console.log(workerUrl.toString());
-    var options = {
-      debug: false,
-      canvas: canvas,
-      subContent: this.subtitles,
-      lazyFileLoading: true,
-      availableFonts: fontMap,
-      // workerUrl: require("!!file-loader?name=[name].[ext]!libass-wasm/dist/subtitles-octopus-worker.js"),
-      // workerUrl: workerUrl,
-      workerUrl: "/static/subtitles-octopus-worker.js", // Link to WebAssembly-based file "libassjs-worker.js"
-      legacyWorkerUrl: "/static/subtitles-octopus-worker-legacy.js", // Link to non-WebAssembly worker
-    };
-    this.subtitleManager = new SubtitlesOctopus(options);
-
     this.updateAudio(this.songFile, this.audioDelay);
   },
   watch: {
-    subtitles(newSubs: string) {
-      this.subtitleManager.setTrack(newSubs);
-    },
     songFile(newSongFile: Blob) {
       this.updateAudio(newSongFile, this.audioDelay);
     },
   },
-  computed: {
-    videoDataUrl() {
-      if (this.videoBlob) {
-        return URL.createObjectURL(this.videoBlob);
-      }
-      return null;
-    },
-  },
   methods: {
+    setPlayhead(playhead: number) {
+      if (playhead != this.$refs.player.currentTime) {
+        this.$refs.player.currentTime = playhead;
+      }
+      this.$refs.subtitleDisplay.setPlayhead(playhead);
+    },
     async updateAudio(audioData: Blob, silence: number) {
       const audioWithSilence = await this.prependSilence(audioData, silence);
       this.audioDataUrl = URL.createObjectURL(audioWithSilence);
@@ -186,24 +146,19 @@ export default defineComponent({
 
     onAudioTimeUpdate() {
       const currentTime = this.$refs.player.currentTime;
-      this.subtitleManager.setCurrentTime(currentTime);
-      if (this.$refs.video) {
-        this.$refs.video.currentTime = Math.max(
-          0,
-          currentTime - this.audioDelay
-        );
-      }
+      this.setPlayhead(currentTime);
+      this.$emit("timeupdate", currentTime);
     },
     // These listeners call some internal libass-wasm functions that dramatically
     // improve rendering performance
     onAudioPlaying() {
-      this.subtitleManager.setIsPaused(false, this.$refs.player.currentTime);
-      // this.$refs.video?.play();
+      this.$refs.subtitleDisplay.play();
+      this.$emit("playing");
     },
 
     onAudioPause() {
-      this.subtitleManager.setIsPaused(true, this.$refs.player.currentTime);
-      // this.$refs.video?.pause();
+      this.$refs.subtitleDisplay.pause();
+      this.$emit("pause");
     },
     onAudioSeeking() {
       this.$refs.player.removeEventListener(
@@ -211,6 +166,7 @@ export default defineComponent({
         this.onAudioTimeUpdate,
         false
       );
+      this.$emit("seeking");
     },
 
     onAudioSeeked() {
@@ -221,18 +177,13 @@ export default defineComponent({
       );
 
       var currentTime = this.$refs.player.currentTime;
+      this.$refs.subtitleDisplay.setPlayhead(currentTime);
 
-      this.subtitleManager.setCurrentTime(currentTime);
-      if (this.$refs.video) {
-        this.$refs.video.currentTime = Math.max(
-          0,
-          currentTime - this.audioDelay
-        );
-      }
+      this.$emit("seeked", currentTime);
     },
     onAudioWaiting() {
-      this.subtitleManager.setIsPaused(true, this.$refs.player.currentTime);
-      // this.$refs.video?.pause();
+      this.$refs.subtitleDisplay.pause();
+      this.$emit("waiting");
     },
   },
 });
@@ -241,27 +192,5 @@ export default defineComponent({
 .preview-container {
   text-align: center;
   width: 320px;
-}
-
-.video-container {
-  position: relative;
-  height: 240px;
-}
-
-.background-video {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.subtitle-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
 }
 </style>
