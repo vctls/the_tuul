@@ -1,29 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { shallowMount, Wrapper } from '@vue/test-utils'
+import { mount, shallowMount, Wrapper } from '@vue/test-utils'
 import VideoPreview from '@/components/VideoPreview.vue'
-
-
-// Define interface for SubtitlesOctopus
-interface SubtitlesOctopus {
-    setTrack: (subtitles: string) => void;
-    setCurrentTime: (time: number) => void;
-    setIsPaused: (isPaused: boolean, currentTime: number) => void;
-}
-
-vi.mock('libass-wasm', () => {
-    console.log('Mocking libass-wasm in test file');
-    return {
-        __esModule: true,
-        default: vi.fn().mockImplementation((options) => {
-            console.log('Mock constructor called in test');
-            return {
-                setTrack: vi.fn(),
-                setCurrentTime: vi.fn(),
-                setIsPaused: vi.fn()
-            };
-        })
-    };
-});
 
 describe('VideoPreview', () => {
     interface Props {
@@ -59,7 +36,7 @@ describe('VideoPreview', () => {
     });
 
     it('renders the correct elements', async () => {
-        const wrapper: Wrapper<Vue> = shallowMount(VideoPreview, {
+        const wrapper: Wrapper<Vue> = mount(VideoPreview, {
             propsData: props,
             stubs: {
                 'b-message': true

@@ -15,6 +15,9 @@
                 "./frontend/lib/*"
             ]
         },
+        "types": [
+            "vitest/globals"
+        ]
     },
     "vueCompilerOptions": {
         "target": 2.7

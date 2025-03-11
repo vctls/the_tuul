@@ -1,6 +1,7 @@
 import { LyricSegmentIterator, LyricsScreen, compileLyricTimings, setScreenStartTimes, adjustScreenTimestamps, setSegmentEndTimes, createAssFile, floatToTimecode, LyricsLine, KaraokeOptions, LyricEvent, VerticalAlignment, adjustSegmentTiming } from "./timing";
 import { LYRIC_MARKERS } from "../constants";
 import { LyricSegment } from "./timing";
+import { COUNT_IN_SEGMENT_TEXT } from "./adjustments";
 
 const DEFAULT_OPTIONS: KaraokeOptions = {
     addTitleScreen: true,
@@ -53,7 +54,7 @@ const testAssPreamble = `[Script Info]
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial Narrow,20,&H00FF00FF,&H00FFFF00,&HFF000000,&H00000000,-1,0,0,0,100,100,0,0,1,2,2,8,0,0,0,0
+Style: Default,Arial Narrow,20,&H00FF00FF,&H00FFFF00,&H0000FFFF,&H00000000,-1,0,0,0,100,100,0,0,1,1,0,8,0,0,0,0
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -61,7 +62,7 @@ Dialogue: 0,0:00:00.00,0:00:04.00,Default,Singer,0,0,130,,{\\k0}{\\kf200}It's C�
 Dialogue: 0,0:00:00.00,0:00:04.00,Default,Singer,0,0,160,,{\\k200}{\\kf200}TÜ/ÜL
 `
 
-const testAss = testAssPreamble + `Dialogue: 0,0:00:04.00,0:00:11.00,Default,Singer,0,0,130,,{\\k0}{\\kf200}●●● {\\kf100}Be bop {\\kf100}{\\kf100}a lu bop
+const testAss = testAssPreamble + `Dialogue: 0,0:00:04.00,0:00:11.00,Default,Singer,0,0,130,,{\\k0}{\\kf200}${COUNT_IN_SEGMENT_TEXT}{\\kf100}Be bop {\\kf100}{\\kf100}a lu bop
 
 Dialogue: 0,0:00:04.00,0:00:11.00,Default,Singer,0,0,160,,{\\k500}{\\kf100}She's my ba{\\kf100}by
 
@@ -178,7 +179,7 @@ test('addCountIn', () => {
     const options: KaraokeOptions = { ...DEFAULT_OPTIONS, addInstrumentalScreens: false, addStaggeredLines: false }
     let assFile = createAssFile(lyrics, timings, songDuration, "It's Cøøl to Tüül", "TÜ/ÜL", options);
 
-    const expected = testAssPreamble + `Dialogue: 0,0:00:04.00,0:01:00.00,Default,Singer,0,0,130,,{\\k9400}{\\kf200}●●● {\\kf500}That was a long intro
+    const expected = testAssPreamble + `Dialogue: 0,0:00:04.00,0:01:00.00,Default,Singer,0,0,130,,{\\k9400}{\\kf200}${COUNT_IN_SEGMENT_TEXT}{\\kf500}That was a long intro
 
 Dialogue: 0,0:00:04.00,0:01:00.00,Default,Singer,0,0,160,,{\\k10100}{\\kf-4500}Too bad nothing rhymes with intro
 `
@@ -203,7 +204,7 @@ test('addCountInToSevenSecondIntro', () => {
         [14.0, LYRIC_MARKERS.SEGMENT_START],
         [15.0, LYRIC_MARKERS.SEGMENT_START],
     ]
-    const sevenSecondAss = testAssPreamble + `Dialogue: 0,0:00:04.00,0:00:12.00,Default,Singer,0,0,130,,{\\k150}{\\kf200}●●● {\\kf100}Be bop {\\kf50}{\\kf100}a lu bop
+    const sevenSecondAss = testAssPreamble + `Dialogue: 0,0:00:04.00,0:00:12.00,Default,Singer,0,0,130,,{\\k150}{\\kf200}${COUNT_IN_SEGMENT_TEXT}{\\kf100}Be bop {\\kf50}{\\kf100}a lu bop
 
 Dialogue: 0,0:00:04.00,0:00:12.00,Default,Singer,0,0,160,,{\\k600}{\\kf100}She's my ba{\\kf100}by
 
