@@ -24,6 +24,10 @@ module.exports = {
         new webpack.ProvidePlugin({
             Vue: 'Vue'
         }),
+        // Ignore test files
+        new webpack.IgnorePlugin({
+            resourceRegExp: /\.spec\.ts$/,
+        }),
         new webpack.EnvironmentPlugin({ 'API_HOSTNAME': "", 'DONATE_URL': 'https://ko-fi.com/incidentist' })
     ],
     module: {
