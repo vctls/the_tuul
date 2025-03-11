@@ -1,4 +1,3 @@
-import 'jest';
 import { mount } from '@vue/test-utils';
 import FileUpload from './FileUpload.vue';
 
