@@ -32,7 +32,12 @@
       </p>
       <p>If you need to take a break, hit the Pause button.</p>
       <p>
-        <strong>Step 4: Create The Video.</strong> After you've given an Enter
+        <strong>Step 5: Adjust timings (Optional, and in beta).</strong> Head to
+        the Adjust tab to preview your track. If any of the timings seem off,
+        drag the edges of that lyric until the timing is better.
+      </p>
+      <p>
+        <strong>Step 6: Create The Video.</strong> After you've given an Enter
         press to the last lyric in the song, you can watch the preview, fiddle
         with fonts and colors, and click the <code>Submit</code> button. Wait
         5-10 minutes. Eventually you'll be asked to download a zip file. Inside
@@ -62,6 +67,16 @@
         </li>
       </ul>
       <h3>What's New</h3>
+      <h5>0.12 - March 14, 2025</h5>
+      <ul>
+        <li>Initial beta of new timing-adjustment interface!</li>
+        <li>
+          YouTube downloads should be fixed now, for real, hopefully? For the
+          self-hosters out there, you can give it a SOCKS5 proxy for downloading
+          YouTubes.
+        </li>
+        <li>Switched to Vitest from Jest</li>
+      </ul>
       <h5>0.11 - February 19, 2025</h5>
       <ul>
         <li>YouTube downloads should be fixed now.</li>
