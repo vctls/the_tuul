@@ -209,4 +209,4 @@ WEBPACK_LOADER = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # YouTube proxy settings
-YOUTUBE_SOCKS5_PROXY = os.getenv("YOUTUBE_SOCKS5_PROXY", "")
+YOUTUBE_PROXY = os.getenv("YOUTUBE_PROXY", "")
