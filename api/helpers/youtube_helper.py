@@ -19,7 +19,8 @@ def get_youtube_streams(
     proxy_options = None
     if settings.YOUTUBE_SOCKS5_PROXY:
         proxy_options = {
-            "socks5": settings.YOUTUBE_SOCKS5_PROXY,
+            "http": settings.YOUTUBE_PROXY,
+            "https": settings.YOUTUBE_PROXY,
         }
         logger.info("Using proxy for YouTube download")
 
