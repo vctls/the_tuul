@@ -315,8 +315,12 @@ export default defineComponent({
   },
   methods: {
     loadSettings(): Object {
+      const optionsStr = localStorage.videoOptions;
+      if (!optionsStr) {
+        return {};
+      }
       try {
-        const options = JSON.parse(localStorage.videoOptions || "{}");
+        const options = JSON.parse(optionsStr);
         if (
           options.vocalSeparationModel ==
           "model_mel_band_roformer_ep_3005_sdr_11.4360.ckpt"
