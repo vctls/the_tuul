@@ -16,7 +16,8 @@
             ]
         },
         "types": [
-            "vitest/globals"
+            "vitest/globals",
+            "frontend/types"
         ]
     },
     "vueCompilerOptions": {
