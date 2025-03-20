@@ -5,6 +5,8 @@ Normally it takes a long time to make a decent karaoke video. You need to separa
 ## Install
 Requires python 3, [poetry](http://python-poetry.org), npm and ffmpeg. Install with `poetry install && npm install && npm build`.
 
+Copy .env.example to .env and fill out the variables.
+
 ## Run
 This is a Django app. Run it like so:
 ```

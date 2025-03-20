@@ -1,7 +1,6 @@
 // See webpack.common.js for process.env setup
-export const API_HOSTNAME = process.env.API_HOSTNAME;
-// export const API_HOSTNAME = import.meta.env.API_HOSTNAME
-export const DONATE_URL = process.env.DONATE_URL;
+export const API_HOSTNAME = import.meta.env.TUUL_API_HOSTNAME;
+export const DONATE_URL = import.meta.env.TUUL_DONATE_URL;
 
 export const KEY_CODES = {
   SPACEBAR: 32, // code: "Space"
