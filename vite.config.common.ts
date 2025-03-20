@@ -6,7 +6,11 @@ import { resolve } from 'path'
 
 const commonConfig: UserConfig = {
     root: resolve(__dirname, './frontend'),
+    // URL prefix for assets, should be the same as DJANGO_VITE.static_url_prefix
+    // in settings.py
     base: '/bundles/',
+    // Env vars prefixed with TUUL_ will be available in the frontend
+    envPrefix: 'TUUL_',
     plugins: [vue()],
     resolve: {
         alias: {
