@@ -37,7 +37,7 @@ ALLOWED_HOSTS = ["*"]
 INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
-    "webpack_loader",
+    "django_vite",
     "corsheaders",
     "django_structlog",
 ]
@@ -200,6 +200,14 @@ WEBPACK_LOADER = {
         "TIMEOUT": None,
         "IGNORE": [r".+\.hot-update.js", r".+\.map"],
         "LOADER_CLASS": "webpack_loader.loader.WebpackLoader",
+    }
+}
+
+DJANGO_VITE = {
+    "default": {
+        "dev_mode": DEBUG,
+        "static_url_prefix": "/bundles/",
+        "manifest_path": BASE_DIR / "assets" / "bundles" / ".vite" / "manifest.json",
     }
 }
 

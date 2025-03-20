@@ -6,9 +6,10 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "dev": "vite --host --config vite.config.dev.ts",
     "build": "vite build --mode production",
-    "build-dev": "vite dev --host",
-    "watch": "webpack --config webpack.dev.js --watch --mode development"
+    "build-dev": "vite build --config vite.config.dev.ts",
+    "watch": "vite build --config vite.config.dev.ts --watch --host"
   },
   "repository": {
     "type": "git",
