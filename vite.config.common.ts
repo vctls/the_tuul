@@ -12,6 +12,7 @@ const commonConfig: UserConfig = {
     // Env vars prefixed with TUUL_ will be available in the frontend
     envPrefix: 'TUUL_',
     plugins: [vue()],
+
     resolve: {
         alias: {
             '@': resolve(__dirname, './frontend'),

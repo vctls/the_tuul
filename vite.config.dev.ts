@@ -10,8 +10,12 @@ export default mergeConfig(
             minify: false, // Speeds up build time
             sourcemap: 'inline',
         },
-        // server: {
-        //     port: 3000,
-        // }
+        server: {
+            port: 5173,
+            fs: {
+                // Allow serving files from one level up to include node_modules
+                allow: ['..']
+            }
+        }
     })
 )
