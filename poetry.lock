@@ -710,18 +710,6 @@ Django = ">=3.2"
 dev = ["black"]
 
 [[package]]
-name = "django-webpack-loader"
-version = "2.0.1"
-description = "Transparently use webpack with django"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "django-webpack-loader-2.0.1.tar.gz", hash = "sha256:0e8dfb2fcdb39dbfd01be7603c060132a4664f483811ce3c75f2d3c0d39ab762"},
-    {file = "django_webpack_loader-2.0.1-py2.py3-none-any.whl", hash = "sha256:2704c5b0e699a9a3a70aa21b75825d8637cd0df8134c3308b5c2976ecc20b5f7"},
-]
-
-[[package]]
 name = "djangorestframework"
 version = "3.15.2"
 description = "Web APIs for Django, made easy."
@@ -2409,4 +2397,4 @@ brotli = ["brotli"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.12"
-content-hash = "a95d6423b6f89d77709a8d9893ba28e555b6e9fc710c689cf4d5a1ba462a01f7"
+content-hash = "b101a22f93e20b94e48d831de59576beaf773522cd8d549248df36e95cfaab76"

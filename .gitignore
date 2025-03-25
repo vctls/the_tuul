@@ -5,6 +5,5 @@ songs/
 node_modules/
 api/assets/bundles/*
 api/static-build
-api/webpack-stats.json
 api/staticroot/
 .env

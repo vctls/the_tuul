@@ -7,12 +7,7 @@ export default mergeConfig(
     defineConfig({
         // Production-specific settings
         build: {
-            minify: 'terser',
-            terserOptions: {
-                compress: {
-                    drop_console: true,
-                },
-            }
+            minify: true,
         }
     })
 )
