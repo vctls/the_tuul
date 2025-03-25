@@ -10,6 +10,7 @@ const commonConfig: UserConfig = {
     // in settings.py
     base: '/bundles/',
     // Env vars prefixed with TUUL_ will be available in the frontend
+    envDir: process.cwd(),
     envPrefix: 'TUUL_',
     plugins: [vue()],
 
