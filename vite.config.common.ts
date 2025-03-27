@@ -13,7 +13,6 @@ const commonConfig: UserConfig = {
     envDir: process.cwd(),
     envPrefix: 'TUUL_',
     plugins: [vue()],
-
     resolve: {
         alias: {
             '@': resolve(__dirname, './frontend'),

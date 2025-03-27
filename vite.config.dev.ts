@@ -15,6 +15,10 @@ export default mergeConfig(
             fs: {
                 // Allow serving files from one level up to include node_modules
                 allow: ['..']
+            },
+            headers: {
+                'Cross-Origin-Opener-Policy': 'same-site',
+                'Cross-Origin-Embedder-Policy': 'require-corp'
             }
         }
     })

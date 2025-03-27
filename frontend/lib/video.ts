@@ -1,8 +1,15 @@
-import { LogCallback, createFFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile } from "@ffmpeg/util";
+import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile, toBlobURL } from "@ffmpeg/util";
+import type { LogEvent } from '@ffmpeg/ffmpeg/dist/esm/types';
+// import workerUrl from "@ffmpeg/ffmpeg/dist/esm/worker.js?worker&url";
+
+
 import { KaraokeOptions } from "@/lib/timing";
 import jszip from "jszip";
+
 // Functions related to video file creation
+
+const FFMPEG_CORE_VERSION = '0.12.9';
 
 class ApiError extends Error {
     public path: string;
@@ -68,28 +75,32 @@ function getFfmpegParams(hasVideo: boolean, backgroundColor: string, audioDelayM
         ...filterArgs,
         "-shortest",
         "-y",
+        "-threads",
+        "3",
         ...videoMetadata,
         "karaoke.mp4"
     ]
 }
 
-function getProgressParser(fps: number, videoDuration: number): LogCallback {
-    // Return a function that can parse logs and return the current progress as a 0-1 float.
+type ProgressCallback = (progress: number) => void;
+
+function getProgressHandler(fps: number, videoDuration: number, onProgress?: ProgressCallback) {
+    // Return a message handler function that can parse logs and call the progress callback
     let totalFrames = fps * videoDuration;
     var framesFinished = 0;
-    return ({ type, message }) => {
-        if (totalFrames == 0) {
-            return 0;
-        }
-        if (message.startsWith("frame=")) {
+
+    return (message: any) => {
+        if (!onProgress || totalFrames === 0) return;
+
+        if (typeof message === 'string' && message.startsWith("frame=")) {
             const match = message.match(/frame=\s*(\d+)/);
-            if (match.length > 0) {
+            if (match && match.length > 0) {
                 framesFinished = parseFloat(match[1]);
+                const progress = Math.min(framesFinished / totalFrames, 1);
+                onProgress(progress);
             }
         }
-        let progress = framesFinished / totalFrames;
-        return Math.min(progress, 1);
-    }
+    };
 }
 
 async function createVideo(
@@ -100,45 +111,64 @@ async function createVideo(
     videoOptions: KaraokeOptions,
     metadata: Object,
     fontMap: Record<string, string>,
-    logCallback?: LogCallback
+    onProgress?: ProgressCallback
 ): Promise<Uint8Array> {
-    // Create the video using ffmpeg.wasm v0.11
+    // Create the video using ffmpeg.wasm v0.12
     const songFileName = "audio.mp4";
     const backgroundColor =
         "0x" + videoOptions.color.background.toString().substring(1);
     const audioDelayMs = audioDelay * 1000;
-    const ffmpeg = createFFmpeg({ log: true });
-    await ffmpeg.load();
-    // Write audio to ffmpeg-wasm's filesystem
-    await ffmpeg.FS(
-        "writeFile",
+
+    // Create FFmpeg instance and load multithread core
+
+    // Most assets can be pulled from any origin, so let's use a CDN
+    const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core-mt@0.12.9/dist/esm'
+    // The root worker needs to be served from the same origin as the page to enable SharedArrayBuffer
+    const workerBaseUrl = window.location.origin + '/static/ffmpeg';
+    const ffmpeg = new FFmpeg();
+    ffmpeg.on('log', console.log);
+
+    // Download most ffmpeg files to local blobs
+    const [coreURL, wasmURL, workerURL] = await Promise.all([
+        toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),
+    ]);
+    await ffmpeg.load({ coreURL, wasmURL, workerURL, classWorkerURL: `${workerBaseUrl}/worker.js` });
+
+    // Configure progress handler if needed
+    const fps = 20; // Using default fps from color generator
+    const videoDuration = 300; // Default to 5 minutes, could be calculated from metadata
+    if (onProgress) {
+        ffmpeg.on('log', getProgressHandler(fps, videoDuration, onProgress));
+    }
+
+    // Write audio to ffmpeg filesystem
+    await ffmpeg.writeFile(
         songFileName,
-        new Uint8Array(await fetchFile(accompanimentDataUrl))
+        await fetchFile(accompanimentDataUrl)
     );
+
     // Write the subtitle font to the filesystem
-    await ffmpeg.FS(
-        "writeFile",
+    await ffmpeg.writeFile(
         `/tmp/${videoOptions.font.name}.ttf`,
         await fetchFile(fontMap[videoOptions.font.name])
     );
-    await ffmpeg.FS("writeFile", "subtitles.ass", subtitles);
+
+    await ffmpeg.writeFile("subtitles.ass", subtitles);
+
     if (videoBlob) {
-        await ffmpeg.FS(
-            "writeFile",
+        await ffmpeg.writeFile(
             "video.mp4",
-            new Uint8Array(await videoBlob.arrayBuffer())
+            await fetchFile(videoBlob)
         );
-    }
-    if (logCallback) {
-        ffmpeg.setLogger(logCallback);
     }
 
     const ffmpegParams = getFfmpegParams(Boolean(videoBlob), backgroundColor, audioDelayMs, metadata);
-    await ffmpeg.run(
-        ...ffmpegParams
-    );
-    const video = await ffmpeg.FS("readFile", "karaoke.mp4");
-    return video;
+    await ffmpeg.exec(ffmpegParams);
+
+    const videoData = (await ffmpeg.readFile("karaoke.mp4")) as Uint8Array;
+    return videoData;
 }
 
 export async function fetchYouTubeVideo(url: string): Promise<[Blob, Blob, Object]> {
@@ -180,4 +210,4 @@ function ffmpegMetadataArgs(metadata: any) {
     return ffmpegArgs;
 }
 
-export default { createVideo, fetchYouTubeVideo, parseYouTubeTitle, getProgressParser }
+export default { createVideo, fetchYouTubeVideo, parseYouTubeTitle, getProgressHandler }
