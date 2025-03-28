@@ -1,7 +1,6 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
-import type { LogEvent } from '@ffmpeg/ffmpeg/dist/esm/types';
-// import workerUrl from "@ffmpeg/ffmpeg/dist/esm/worker.js?worker&url";
+import type { Log } from '@ffmpeg/ffmpeg/dist/esm/types';
 
 
 import { KaraokeOptions } from "@/lib/timing";
@@ -10,6 +9,12 @@ import jszip from "jszip";
 // Functions related to video file creation
 
 const FFMPEG_CORE_VERSION = '0.12.9';
+
+interface VideoMetadata {
+    duration?: number;
+    artist?: string;
+    title?: string;
+}
 
 class ApiError extends Error {
     public path: string;
@@ -27,7 +32,7 @@ class ApiError extends Error {
     }
 }
 
-function getFfmpegParams(hasVideo: boolean, backgroundColor: string, audioDelayMs: number, metadata: Object) {
+function getFfmpegParams(hasVideo: boolean, backgroundColor: string, audioDelayMs: number, metadata: VideoMetadata) {
     let videoInputArgs, filterArgs;
     if (hasVideo) {
         videoInputArgs = [
@@ -84,12 +89,13 @@ function getFfmpegParams(hasVideo: boolean, backgroundColor: string, audioDelayM
 
 type ProgressCallback = (progress: number) => void;
 
-function getProgressHandler(fps: number, videoDuration: number, onProgress?: ProgressCallback) {
+function getProgressParser(fps: number, videoDuration: number, onProgress?: ProgressCallback): (message: Log) => void {
     // Return a message handler function that can parse logs and call the progress callback
     let totalFrames = fps * videoDuration;
     var framesFinished = 0;
 
-    return (message: any) => {
+    return ({ message }) => {
+        console.log("ffmpeg output", message);
         if (!onProgress || totalFrames === 0) return;
 
         if (typeof message === 'string' && message.startsWith("frame=")) {
@@ -109,7 +115,7 @@ async function createVideo(
     subtitles: string,
     audioDelay: number = 0,
     videoOptions: KaraokeOptions,
-    metadata: Object,
+    metadata: VideoMetadata,
     fontMap: Record<string, string>,
     onProgress?: ProgressCallback
 ): Promise<Uint8Array> {
@@ -126,7 +132,6 @@ async function createVideo(
     // The root worker needs to be served from the same origin as the page to enable SharedArrayBuffer
     const workerBaseUrl = window.location.origin + '/static/ffmpeg';
     const ffmpeg = new FFmpeg();
-    ffmpeg.on('log', console.log);
 
     // Download most ffmpeg files to local blobs
     const [coreURL, wasmURL, workerURL] = await Promise.all([
@@ -138,9 +143,9 @@ async function createVideo(
 
     // Configure progress handler if needed
     const fps = 20; // Using default fps from color generator
-    const videoDuration = 300; // Default to 5 minutes, could be calculated from metadata
+    const videoDuration = metadata.duration || 300; // Default to 5 minutes, could be calculated from metadata
     if (onProgress) {
-        ffmpeg.on('log', getProgressHandler(fps, videoDuration, onProgress));
+        ffmpeg.on('log', getProgressParser(fps, videoDuration, onProgress));
     }
 
     // Write audio to ffmpeg filesystem
@@ -198,7 +203,7 @@ export function parseYouTubeTitle(videoMetadata: any): [string, string] {
     return ['', videoMetadata.title];
 }
 
-function ffmpegMetadataArgs(metadata: any) {
+function ffmpegMetadataArgs(metadata: VideoMetadata): string[] {
     let ffmpegArgs = []
     if (metadata.artist) {
         ffmpegArgs.push('-metadata', `artist=${metadata.artist}`);
@@ -210,4 +215,4 @@ function ffmpegMetadataArgs(metadata: any) {
     return ffmpegArgs;
 }
 
-export default { createVideo, fetchYouTubeVideo, parseYouTubeTitle, getProgressHandler }
+export default { createVideo, fetchYouTubeVideo, parseYouTubeTitle, getProgressParser };
