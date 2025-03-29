@@ -8,7 +8,6 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'frontend'),
-            // Add any other aliases your webpack config uses
         },
     },
     test: {

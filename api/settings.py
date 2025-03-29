@@ -28,7 +28,6 @@ SECRET_KEY = os.getenv("SECRET_KEY", "frabbaglabba")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", True) != "False"
-
 ALLOWED_HOSTS = ["*"]
 
 
@@ -37,7 +36,7 @@ ALLOWED_HOSTS = ["*"]
 INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
-    "webpack_loader",
+    "django_vite",
     "corsheaders",
     "django_structlog",
 ]
@@ -191,15 +190,11 @@ else:
 
     STATIC_ROOT = BASE_DIR / "staticroot"
 
-WEBPACK_LOADER = {
-    "DEFAULT": {
-        "CACHE": not DEBUG,
-        "BUNDLE_DIR_NAME": "bundles/",  # must end with slash
-        "STATS_FILE": BASE_DIR / "webpack-stats.json",
-        "POLL_INTERVAL": 0.1,
-        "TIMEOUT": None,
-        "IGNORE": [r".+\.hot-update.js", r".+\.map"],
-        "LOADER_CLASS": "webpack_loader.loader.WebpackLoader",
+DJANGO_VITE = {
+    "default": {
+        "dev_mode": DEBUG,
+        "static_url_prefix": "/bundles/",
+        "manifest_path": BASE_DIR / "assets" / "bundles" / ".vite" / "manifest.json",
     }
 }
 

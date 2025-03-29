@@ -692,16 +692,22 @@ celery = ["celery (>=5.1)"]
 commands = ["django-extensions (>=1.4.9)"]
 
 [[package]]
-name = "django-webpack-loader"
-version = "2.0.1"
-description = "Transparently use webpack with django"
+name = "django-vite"
+version = "3.1.0"
+description = "Integration of Vite in a Django project."
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "django-webpack-loader-2.0.1.tar.gz", hash = "sha256:0e8dfb2fcdb39dbfd01be7603c060132a4664f483811ce3c75f2d3c0d39ab762"},
-    {file = "django_webpack_loader-2.0.1-py2.py3-none-any.whl", hash = "sha256:2704c5b0e699a9a3a70aa21b75825d8637cd0df8134c3308b5c2976ecc20b5f7"},
+    {file = "django_vite-3.1.0-py3-none-any.whl", hash = "sha256:4e46572bd6b1ce70784be129205dc2ffcbc7a3c19fea50bebfb72b327bbde5fc"},
+    {file = "django_vite-3.1.0.tar.gz", hash = "sha256:8b4ffe4a9fa81ff568bfb195e74dde8694aaf13fd4b656ae60bf59cce08b85e8"},
 ]
+
+[package.dependencies]
+Django = ">=3.2"
+
+[package.extras]
+dev = ["black"]
 
 [[package]]
 name = "djangorestframework"
@@ -2391,4 +2397,4 @@ brotli = ["brotli"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.12"
-content-hash = "ef674f713315761d9594534fa9e750acead4b4b0a26016c6eef87aeedd7288ef"
+content-hash = "b101a22f93e20b94e48d831de59576beaf773522cd8d549248df36e95cfaab76"

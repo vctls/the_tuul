@@ -407,9 +407,7 @@ export default defineComponent({
             duration: this.songInfo.duration,
           },
           fonts,
-          (logParams) => {
-            let progress = this.ffmpegLogParser(logParams);
-            console.log(logParams, progress);
+          (progress) => {
             self.videoProgress = progress;
           }
         );
