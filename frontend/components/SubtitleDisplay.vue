@@ -61,6 +61,10 @@ export default defineComponent({
       return null;
     },
   },
+  created() {
+    // Chrome video stutters when currentTime is set frequently, so we throttle it to 15fps
+    this.setVideoPlayhead = _.throttle(this.setVideoPlayhead, 1000 / 15);
+  },
   mounted() {
     const canvas = this.$refs.subtitleCanvas;
     // SubtitleOctopus expects font names to be lowercase
@@ -91,8 +95,11 @@ export default defineComponent({
   methods: {
     setPlayhead(playhead: number) {
       this.currentTime = playhead;
+      this.setVideoPlayhead(Math.max(0, playhead - this.audioDelay));
+    },
+    setVideoPlayhead(playhead: number) {
       if (this.$refs.video) {
-        this.$refs.video.currentTime = Math.max(0, playhead - this.audioDelay);
+        this.$refs.video.currentTime = playhead;
       }
     },
     pause() {
