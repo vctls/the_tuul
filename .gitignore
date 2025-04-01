@@ -3,7 +3,7 @@ __pycache__
 # pretrained_models
 songs/
 node_modules/
-api/assets/bundles/*
 api/static-build
 api/staticroot/
 .env
+api/assets/**/*.m4a
