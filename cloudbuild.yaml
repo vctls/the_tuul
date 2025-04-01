@@ -1,13 +1,18 @@
 steps:
-  - name: "node:21"
+  - name: "node:22"
     entrypoint: "npm"
     args: ["install"]
+  # Install needed linux rollup module
+  - name: "node:22"
+    entrypoint: "npm"
+    args: ["install", "@rollup/rollup-linux-x64-gnu"]
   # Build the frontend
-  - name: "node"
+  - name: "node:22"
     entrypoint: "npm"
     args: ["run", "build"]
     env:
-      - "API_HOSTNAME=$_API_HOSTNAME"
+      - "TUUL_API_HOSTNAME=$_API_HOSTNAME"
+      - "TUUL_DONATE_URL=$_DONATE_URL"
   # Build the container image after pulling in large model files
   - name: "gcr.io/cloud-builders/docker"
     script: |
@@ -37,7 +42,7 @@ steps:
         "--cpu=1",
         "--memory=2Gi",
         "--set-env-vars",
-        "LOGGING_FORMAT=gcp",
+        "LOGGING_FORMAT=gcp,DEBUG=False",
       ]
   # Deploy API service for high-intensity requests
   - waitFor:
@@ -59,7 +64,7 @@ steps:
         "--timeout=2400s",
         "--no-cpu-throttling",
         "--set-env-vars",
-        "LOGGING_FORMAT=gcp"
+        "LOGGING_FORMAT=gcp,DEBUG=False",
       ]
 timeout: 1800s
 substitutions:
@@ -67,6 +72,7 @@ substitutions:
   _CLOUD_RUN_HEAVY_DUTY_APP_NAME: "the-tuul-heavy-duty"
   _CLOUD_RUN_REGION: "us-central1"
   _API_HOSTNAME: "https://separate.the-tuul.com"
+  _DONATE_URL: "https://ko-fi.com/incidentist"
   _DOCKER_IMAGE: "${_CLOUD_RUN_REGION}-docker.pkg.dev/${PROJECT_ID}/${_CLOUD_RUN_APP_NAME}/the_tuul"
 images:
   - ${_DOCKER_IMAGE}

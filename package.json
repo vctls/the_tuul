@@ -4,6 +4,9 @@
   "description": "Create a decent karaoke video from any song in about 10 minutes.",
   "main": "index.ts",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
