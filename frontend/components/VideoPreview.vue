@@ -11,10 +11,10 @@
       :backgroundColor="backgroundColor"
       :videoBlob="videoBlob"
     />
-    <audio
+    <smooth-audio-player
       ref="player"
-      controls
       :src="audioDataUrl"
+      controls
       @timeupdate="onAudioTimeUpdate"
       @playing="onAudioPlaying"
       @pause="onAudioPause"
@@ -33,9 +33,10 @@ import * as _ from "lodash";
 import { defineComponent } from "vue";
 import bufferToWav from "audiobuffer-to-wav";
 import SubtitleDisplay from "./SubtitleDisplay.vue";
+import SmoothAudioPlayer from "./SmoothAudioPlayer.vue";
 
 export default defineComponent({
-  components: { SubtitleDisplay },
+  components: { SubtitleDisplay, SmoothAudioPlayer },
   props: {
     songFile: {
       type: Blob,
@@ -144,8 +145,8 @@ export default defineComponent({
       return result;
     },
 
-    onAudioTimeUpdate() {
-      const currentTime = this.$refs.player.currentTime;
+    onAudioTimeUpdate(e: Event) {
+      const currentTime = (e.target as HTMLAudioElement).currentTime;
       this.setPlayhead(currentTime);
       this.$emit("timeupdate", currentTime);
     },
@@ -160,7 +161,7 @@ export default defineComponent({
       this.$refs.subtitleDisplay.pause();
       this.$emit("pause");
     },
-    onAudioSeeking() {
+    onAudioSeeking(e: Event) {
       this.$refs.player.removeEventListener(
         "timeupdate",
         this.onAudioTimeUpdate,
@@ -169,14 +170,14 @@ export default defineComponent({
       this.$emit("seeking");
     },
 
-    onAudioSeeked() {
+    onAudioSeeked(e: Event) {
       this.$refs.player.addEventListener(
         "timeupdate",
         this.onAudioTimeUpdate,
         false
       );
 
-      var currentTime = this.$refs.player.currentTime;
+      var currentTime = (e.target as HTMLAudioElement).currentTime;
       this.$refs.subtitleDisplay.setPlayhead(currentTime);
 
       this.$emit("seeked", currentTime);

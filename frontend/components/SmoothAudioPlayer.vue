@@ -5,6 +5,8 @@
     @play="startTimeUpdateLoop($event)"
     @pause="onPause"
     @seeking="$emit('seeking', $event)"
+    @seeked="$emit('seeked', $event)"
+    @waiting="$emit('waiting', $event)"
     @error="$emit('error', $event)"
   ></audio>
 </template>
@@ -23,6 +25,22 @@ export default defineComponent({
     };
   },
   methods: {
+    addEventListener(
+      eventName: string,
+      callback: EventListenerOrEventListenerObject,
+      useCapture: boolean = false
+    ) {
+      const audio = this.$refs.audioPlayer as HTMLAudioElement;
+      audio.addEventListener(eventName, callback, useCapture);
+    },
+    removeEventListener(
+      eventName: string,
+      callback: EventListenerOrEventListenerObject,
+      useCapture: boolean = false
+    ) {
+      const audio = this.$refs.audioPlayer as HTMLAudioElement;
+      audio.removeEventListener(eventName, callback, useCapture);
+    },
     setCurrentTime(time: number) {
       const audio = this.$refs.audioPlayer as HTMLAudioElement;
       audio.currentTime = time;
