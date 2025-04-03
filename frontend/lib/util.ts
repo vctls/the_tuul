@@ -15,9 +15,22 @@ export function readFileAsync(file: File): Promise<string | ArrayBuffer> {
 
 
 export function setupErrorHandling() {
+    const LOG_ERRORS_TO_SERVER = true;
     const originalConsoleError = console.error;
 
-    function logError(err: Error, vm: any, info: string) {
+    if (!LOG_ERRORS_TO_SERVER) {
+        return originalConsoleError;
+    }
+
+    function logError(error: Error | string, vm: any, info: string) {
+        // Convert string errors to Error objects to get stack traces
+        const err = error instanceof Error ? error : new Error(error);
+
+        // Extract file and line information from stack trace
+        const stackLines = err.stack?.split('\n') || [];
+        const errorLocation = stackLines[1]?.match(/\((.*):(\d+):(\d+)\)/) || [];
+        const [, filePath, lineNumber, columnNumber] = errorLocation;
+
         // Send the error to the server
         fetch("/log_error", {
             method: "POST",
@@ -25,18 +38,36 @@ export function setupErrorHandling() {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                error: err.toString(),
+                message: err.message,
+                stack: err.stack,
+                file: filePath?.split('/').slice(-2).join('/') || 'unknown', // Last two parts of path
+                line: lineNumber || 'unknown',
+                column: columnNumber || 'unknown',
+                type: err.name,
                 info,
+                userAgent: navigator.userAgent,
+                timestamp: new Date().toISOString(),
+                vue: vm ? {
+                    component: vm.$options?.name || 'unknown',
+                    props: vm.$props,
+                    route: vm.$route?.path
+                } : undefined
             }),
-        })
+        }).catch(e => {
+            // Fallback to original console if server logging fails
+            originalConsoleError('Failed to log error to server:', e);
+        });
     }
 
     console.error = function (...args: any[]) {
         try {
             originalConsoleError.apply(console, args);
-            logError(new Error(args.join(" ")), null, "");
+
+            // Handle different types of error arguments
+            const error = args.find(arg => arg instanceof Error) || new Error(args.join(" "));
+            logError(error, null, args.join(" "));
         } catch (error) {
-            originalConsoleError.apply(console, error);
+            originalConsoleError.apply(console, [error]);
         }
     };
     return logError;
