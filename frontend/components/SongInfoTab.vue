@@ -3,7 +3,7 @@
     <template #header>
       <b-icon v-if="!isSeparatingTrack" icon="file-audio"></b-icon>
       <b-tooltip v-else label="Separating track" position="is-right"
-        ><b-icon icon="spinner" custom-class="loader"></b-icon
+        ><b-icon icon="loader" custom-class="loader"></b-icon
       ></b-tooltip>
       <span> Song File</span>
     </template>
@@ -91,9 +91,7 @@
 import { defineComponent } from "vue";
 import { mapStores } from "pinia";
 import { fetchYouTubeVideo, parseYouTubeTitle } from "@/lib/video";
-
-// jsmediatags.min.js is automatically bundled by Vite
-const jsmediatags = window.jsmediatags;
+import jsmediatags from "@/jsmediatags.min.js";
 
 import {
   useMusicSeparationStore,
