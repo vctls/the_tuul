@@ -4,6 +4,7 @@
     label="Adjust (BETA)"
     :disabled="!enabled"
     class="timing-adjustment-tab"
+    headerClass="timing-adjustment-tab-header"
   >
     <div class="content">
       <p>

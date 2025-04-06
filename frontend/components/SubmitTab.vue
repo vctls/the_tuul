@@ -3,6 +3,7 @@
     label="Submit"
     icon="blender"
     class="submit-tab scroll-wrapper"
+    headerClass="submit-tab-header"
     :disabled="!enabled"
   >
     <div class="columns is-variable is-5">

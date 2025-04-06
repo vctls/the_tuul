@@ -49,6 +49,7 @@
   },
   "devDependencies": {
     "@ffmpeg/types": "^0.12.4",
+    "@playwright/test": "^1.51.1",
     "@types/jsmediatags": "^3.9.6",
     "@types/lodash": "^4.14.195",
     "@vitejs/plugin-vue2": "^2.3.3",

@@ -2,7 +2,8 @@
   <b-tab-item
     label="Song Timing"
     icon="stopwatch"
-    class="wrapper"
+    class="wrapper song-timing-tab"
+    headerClass="song-timing-tab-header"
     :disabled="!songFile || lyricSegments.length == 0"
   >
     <h2 class="title">
@@ -54,7 +55,11 @@
     <div class="level">
       <div class="level-item">
         <div class="buttons">
-          <b-button type="is-primary" @click="playPause">
+          <b-button
+            type="is-primary"
+            @click="playPause"
+            name="song-timing-play-pause"
+          >
             {{ isPlaying ? "Pause" : "Play" }}
           </b-button>
           <b-button type="is-primary" @click="redoScreen" :active="isPlaying">

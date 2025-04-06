@@ -1,5 +1,8 @@
 <template>
-  <b-tab-item :class="['help-tab', 'scroll-wrapper']">
+  <b-tab-item
+    :class="['help-tab', 'scroll-wrapper']"
+    headerClass="song-info-tab-header"
+  >
     <template #header>
       <b-icon v-if="!isSeparatingTrack" icon="file-audio"></b-icon>
       <b-tooltip v-else label="Separating track" position="is-right"
@@ -10,6 +13,7 @@
     <div class="container">
       <h2 class="title">Get Your Song Ready</h2>
       <file-upload
+        name="song-file-upload"
         label="Upload a file from your computer:"
         v-model="songFile"
         @input="onSongFileChange"
@@ -31,10 +35,10 @@
         />
       </b-field>
       <b-field label="Song Artist">
-        <b-input v-model="artist" @input="onTextChange" />
+        <b-input name="artist" v-model="artist" @input="onTextChange" />
       </b-field>
       <b-field label="Song Title">
-        <b-input v-model="title" @input="onTextChange" />
+        <b-input name="title" v-model="title" @input="onTextChange" />
       </b-field>
       <b-field
         horizontal
@@ -160,25 +164,53 @@ export default defineComponent({
   },
   methods: {
     async songDuration(songFile: File): Promise<number> {
-      const p = new Promise<number>(async (resolve, reject) => {
-        const audio = document.createElement("audio");
-        audio.addEventListener(
-          "loadedmetadata",
-          () => {
-            const duration = audio.duration;
-            resolve(duration);
-          },
-          false
-        );
-        audio.addEventListener("error", reject);
+      return new Promise<number>((resolve, reject) => {
         const reader = new FileReader();
-        reader.addEventListener("load", (e) => {
-          audio.src = e.target.result.toString();
-        });
-        reader.addEventListener("error", reject);
-        reader.readAsDataURL(songFile);
+
+        reader.onload = async (event) => {
+          try {
+            const audioContext = new AudioContext();
+            const arrayBuffer = event.target.result as ArrayBuffer;
+
+            audioContext.decodeAudioData(
+              arrayBuffer,
+              (audioBuffer) => {
+                const duration = audioBuffer.duration;
+                resolve(duration);
+              },
+              (error) => {
+                console.error("Error decoding audio data:", error);
+                reject(
+                  new Error(
+                    "Failed to decode audio data: " +
+                      (error?.message || "Unknown error")
+                  )
+                );
+              }
+            );
+          } catch (error) {
+            console.error("Audio context error:", error);
+            reject(
+              new Error(
+                "Failed to create or use AudioContext: " +
+                  (error?.message || "Unknown error")
+              )
+            );
+          }
+        };
+
+        reader.onerror = (event) => {
+          console.error("FileReader error:", reader.error);
+          reject(
+            new Error(
+              "Failed to read audio file: " +
+                (reader.error?.message || "Unknown error")
+            )
+          );
+        };
+
+        reader.readAsArrayBuffer(songFile);
       });
-      return p;
     },
     onSongFileChange(file: File | null) {
       if (!file) {

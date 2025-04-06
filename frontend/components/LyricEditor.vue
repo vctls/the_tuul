@@ -1,6 +1,6 @@
 <template>
   <textarea
-    class="textarea is-flex-grow-1"
+    class="textarea is-flex-grow-1 lyric-editor-textarea"
     :value="value"
     @input="onLyricInput"
     ref="lyricInput"
