@@ -1,5 +1,10 @@
 <template>
-  <b-tab-item label="Lyrics" icon="align-left" class="lyric-input-tab">
+  <b-tab-item
+    label="Lyrics"
+    icon="align-left"
+    class="lyric-input-tab"
+    headerClass="lyric-input-tab-header"
+  >
     <h2 class="title">Song Lyrics</h2>
     <div class="content">
       <p>
