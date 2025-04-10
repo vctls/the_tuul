@@ -42,7 +42,7 @@
     "bulma": "^0.9.4",
     "jszip": "^3.10.1",
     "libass-wasm": "^4.1.0",
-    "lodash": "^4.17.21",
+    "lodash-es": "^4.17.21",
     "pinia": "^2.1.7",
     "vue": "^2.7.14",
     "wavesurfer.js": "^7.8.2"

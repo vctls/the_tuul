@@ -1,4 +1,4 @@
-import * as _ from 'lodash';
+import { pullAt } from 'lodash-es';
 import { KEY_CODES, LYRIC_MARKERS } from "../constants";
 
 type LyricMarker = number;
@@ -39,7 +39,7 @@ export default class TimingsList {
             return;
         }
         if (previousTiming[1] == LYRIC_MARKERS.SEGMENT_END) {
-            _.pullAt(this._timings, [this._timings.length - 1])
+            pullAt(this._timings, [this._timings.length - 1])
         }
     }
 

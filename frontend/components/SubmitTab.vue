@@ -166,7 +166,7 @@
 </template>
 
 <script lang="ts">
-import * as _ from "lodash";
+import { sum, map } from "lodash-es";
 import { defineComponent } from "vue";
 import { createAssFile, createScreens, VerticalAlignment } from "@/lib/timing";
 import VideoPreview from "@/components/VideoPreview.vue";
@@ -293,7 +293,7 @@ export default defineComponent({
         this.songInfo.artist,
         this.videoOptions
       );
-      return _.sum(_.map(screens, "audioDelay"));
+      return sum(map(screens, "audioDelay"));
     },
     zipFileName(): string {
       return `${this.videoFileName}.zip`;

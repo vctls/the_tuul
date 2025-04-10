@@ -20,7 +20,7 @@
 <script lang="ts">
 /* A component that displays an .ass file */
 
-import * as _ from "lodash";
+import { throttle, mapKeys } from "lodash-es";
 import { defineComponent } from "vue";
 import SubtitlesOctopus from "libass-wasm";
 
@@ -63,12 +63,12 @@ export default defineComponent({
   },
   created() {
     // Chrome video stutters when currentTime is set frequently, so we throttle it to 15fps
-    this.setVideoPlayhead = _.throttle(this.setVideoPlayhead, 1000 / 15);
+    this.setVideoPlayhead = throttle(this.setVideoPlayhead, 1000 / 15);
   },
   mounted() {
     const canvas = this.$refs.subtitleCanvas;
     // SubtitleOctopus expects font names to be lowercase
-    const fontMap = _.mapKeys(this.fonts, (_, key) => key.toLowerCase());
+    const fontMap = mapKeys(this.fonts, (_, key) => key.toLowerCase());
     // Create a subtitle renderer and tie it to our player and canvas
     var options = {
       debug: false,

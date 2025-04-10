@@ -11,7 +11,7 @@ import { BasePlugin } from 'wavesurfer.js/dist/base-plugin';
 import { BasePluginEvents } from 'wavesurfer.js/dist/base-plugin';
 import EventEmitter from 'wavesurfer.js/dist/event-emitter'
 import createElement from 'wavesurfer.js/dist/dom'
-import { property } from 'lodash';
+import { property } from 'lodash-es';
 
 export class OverlapError extends Error {
     constructor(region: Region, otherRegion: Region) {

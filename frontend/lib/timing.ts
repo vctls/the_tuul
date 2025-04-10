@@ -1,7 +1,6 @@
 import { LYRIC_MARKERS, VIDEO_SIZE, TITLE_SCREEN_DURATION } from "../constants";
 import { addQuickStartCountIn, addScreenCountIns, addTitleScreen, addInstrumentalScreens, displayQuickLinesEarly } from "./adjustments";
-import * as _ from "lodash";
-import { isNumber } from "lodash";
+import { map, method, isNumber } from "lodash-es";
 import { default as BuefyColor } from "buefy/src/utils/color";
 
 
@@ -259,7 +258,7 @@ export class LyricsScreen {
   }
 
   adjustTimestamps(adjustment: number): LyricsScreen {
-    const lines = _.map(this.lines, _.method('adjustTimestamps', adjustment));
+    const lines = map(this.lines, method('adjustTimestamps', adjustment));
     const screen = new LyricsScreen(lines, this.audioDelay);
     screen.startTimestamp = this.startTimestamp;
     if (isNumber(screen.startTimestamp)) {
@@ -378,7 +377,7 @@ export class LyricsLine {
   }
 
   adjustTimestamps(adjustment: number): LyricsLine {
-    const segments = _.map(this.segments, _.method('adjustTimestamps', adjustment))
+    const segments = map(this.segments, method('adjustTimestamps', adjustment))
     return new LyricsLine(segments);
   }
 
@@ -469,7 +468,7 @@ export function setScreenStartTimes(screens: LyricsScreen[]): LyricsScreen[] {
 
 export function adjustScreenTimestamps(screens: LyricsScreen[], adjustment: number): LyricsScreen[] {
   // Adjust all timings in [screens] forward by [adjustment] seconds.
-  return _.map(screens, _.method('adjustTimestamps', adjustment));
+  return map(screens, method('adjustTimestamps', adjustment));
 }
 
 export function denormalizeTimestamps(screens: LyricsScreen[], songDuration: number): LyricsScreen[] {

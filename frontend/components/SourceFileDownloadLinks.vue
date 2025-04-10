@@ -23,7 +23,7 @@
 </template>
 
 <script lang="ts">
-import { isString } from "lodash";
+import { isString } from "lodash-es";
 import Vue, { defineComponent } from "vue";
 export default defineComponent({
   props: {

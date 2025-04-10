@@ -1,6 +1,6 @@
 import { adjustScreenTimestamps, LyricSegment, LyricsScreen, LyricsLine, Timestamp, denormalizeTimestamps, KaraokeOptions } from "./timing";
 import { TITLE_SCREEN_DURATION as TITLE_SCREEN_DURATION, INSTRUMENTAL_SCREEN_THRESHOLD } from "../constants";
-import * as _ from "lodash";
+import { concat } from "lodash-es";
 
 const FIRST_SCREEN_QUICK_START_THRESHOLD: Timestamp = 1.0
 const SCREEN_QUICK_START_THRESHOLD: Timestamp = 2.0
@@ -60,7 +60,7 @@ export function trimStart(screens: LyricsScreen[], adjustment: number): LyricsSc
     // Trim [adjustment] seconds from the start of the first screen, keeping other timestamps the same.
     let otherScreens = screens.slice(1);
     const trimmedScreen = screens[0].trimDisplayStart(adjustment);
-    return _.concat([trimmedScreen], otherScreens);
+    return concat([trimmedScreen], otherScreens);
 }
 
 function createInstrumentalScreen(startTime: Timestamp, duration: number): LyricsScreen {
