@@ -62,6 +62,8 @@
       </template>
       <div class="box">
         <file-upload
+          name="timings-file-upload"
+          :accept="['.json']"
           label="Timings File"
           v-model="timingsFile"
           @input="onTimingsFileChange"

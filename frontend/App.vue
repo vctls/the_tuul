@@ -153,7 +153,7 @@ export default defineComponent({
         if (key == "backingTrack") {
           this.musicSeparationStore.setBackingTrack(newOptions[key]);
         } else if (key == "timings") {
-          this.onTimingsChange(newOptions[key]);
+          this.onTimingsChange(newOptions[key], true);
         } else if (Object.hasOwnProperty.call(newOptions, key)) {
           const newValue = newOptions[key];
           this[key] = newValue;
@@ -165,7 +165,10 @@ export default defineComponent({
     // Double line breaks separate screens.
     // Underscores separate segments on word boundaries between a line.
     // Sla/shes separate segments within a word.
-    parseLyricSegments(lyricsText) {
+    parseLyricSegments(lyricsText): Array<{ text: string }> {
+      // if (!lyricsText) {
+      //   return [];
+      // }
       const segments = [];
       let currentSegment = "";
       for (let i = 0; i < lyricsText.length; i++) {
