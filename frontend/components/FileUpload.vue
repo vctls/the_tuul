@@ -25,15 +25,15 @@ import { defineComponent } from "vue";
 export default defineComponent({
   props: {
     label: String,
-    value: File,
+    modelValue: File,
   },
   computed: {
     file: {
       get() {
-        return this.value;
+        return this.modelValue;
       },
       set(newValue) {
-        this.$emit("input", newValue);
+        this.$emit("update:modelValue", newValue);
       },
     },
   },
