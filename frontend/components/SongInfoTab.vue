@@ -16,7 +16,7 @@
         name="song-file-upload"
         label="Upload a file from your computer:"
         v-model="songFile"
-        @input="onSongFileChange"
+        @update:modelValue="onSongFileChange"
       ></file-upload>
       <b-field
         label="Or paste a YouTube video URL:"
@@ -66,12 +66,12 @@
           :accept="['.json']"
           label="Timings File"
           v-model="timingsFile"
-          @input="onTimingsFileChange"
+          @update:modelValue="onTimingsFileChange"
         />
         <file-upload
           label="Backing Track"
           v-model="backingTrackFile"
-          @input="onBackingTrackFileChange"
+          @update:modelValue="onBackingTrackFileChange"
         />
       </div>
     </b-collapse>
@@ -111,7 +111,7 @@ export default defineComponent({
     FileUpload,
   },
   props: {
-    value: Object,
+    modelValue: Object,
     musicSeparationModel: {
       type: String,
       default: BACKING_VOCALS_SEPARATOR_MODEL,
@@ -119,11 +119,11 @@ export default defineComponent({
   },
   data() {
     return {
-      songFile: this.value.file,
-      youtubeUrl: this.value.youtubeUrl,
-      artist: this.value.artist,
-      title: this.value.title,
-      duration: this.value.duration,
+      songFile: this.modelValue?.file || null,
+      youtubeUrl: this.modelValue?.youtubeUrl || null,
+      artist: this.modelValue?.artist || null,
+      title: this.modelValue?.title || null,
+      duration: this.modelValue?.duration || null,
       isLoadingYouTube: false,
       videoBlob: null,
       timingsFile: null,
@@ -217,7 +217,7 @@ export default defineComponent({
     onSongFileChange(file: File | null) {
       if (!file) {
         this.songFile = null;
-        this.$emit("input", this.songInfo);
+        this.$emit("update:modelValue", this.songInfo);
         return;
       }
       const self = this;
@@ -226,16 +226,16 @@ export default defineComponent({
           self.artist = tag.tags.artist;
           self.title = tag.tags.title;
           self.duration = await self.songDuration(self.songFile);
-          self.$emit("input", self.songInfo);
+          self.$emit("update:modelValue", self.songInfo);
         },
         onFailure(error) {
           console.error(error);
-          self.$emit("input", self.songInfo);
+          self.$emit("update:modelValue", self.songInfo);
         },
       });
     },
     onTextChange(e) {
-      this.$emit("input", this.songInfo);
+      this.$emit("update:modelValue", this.songInfo);
     },
     async loadYouTubeUrl() {
       this.isLoadingYouTube = true;
@@ -257,7 +257,7 @@ export default defineComponent({
         this.youtubeError = `There was a problem downloading that video: ${e.message}. Please try again or use a service such as <a href="https://v2.youconvert.net/en/">YouConvert</a> to get the audio and add it above.`;
       }
       this.isLoadingYouTube = false;
-      this.$emit("input", this.songInfo);
+      this.$emit("update:modelValue", this.songInfo);
     },
     onTimingsFileChange(file: File | null) {
       if (!file) {

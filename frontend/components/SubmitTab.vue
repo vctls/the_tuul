@@ -129,7 +129,7 @@
 
     <div class="submit-button-container">
       <b-message
-        :active="Boolean(submitError)"
+        v-model="submitError"
         type="is-danger"
         has-icon
         icon="circle-exclamation"

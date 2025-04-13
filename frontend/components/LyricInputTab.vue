@@ -32,7 +32,6 @@
         <b-checkbox
           type="is-primary"
           v-model="magicSlashes"
-          @click="magicSlashes = !magicSlashes"
         >
           <b-tooltip
             multilined
@@ -46,9 +45,9 @@
     </div>
     <lyric-editor
       ref="lyricEditor"
-      :value="value"
+      :modelValue="modelValue"
       :magic-slashes="magicSlashes"
-      @input="onLyricInput"
+      @update:modelValue="onLyricInput"
     ></lyric-editor>
   </b-tab-item>
 </template>
@@ -62,7 +61,7 @@ export default defineComponent({
     LyricEditor,
   },
   props: {
-    value: String,
+    modelValue: String,
   },
   data() {
     return {
@@ -71,7 +70,7 @@ export default defineComponent({
   },
   methods: {
     onLyricInput(newValue) {
-      this.$emit("input", newValue);
+      this.$emit("update:modelValue", newValue);
     },
     convertSpaces(e) {
       this.$refs.lyricEditor.convertSpaces();

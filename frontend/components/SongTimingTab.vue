@@ -31,14 +31,14 @@
       </p>
     </b-collapse>
     <b-message
-      :active="hasCompletedTimings && !hasMarkedEndOfLastLine"
+      v-model="warningMessageVisible"
       type="is-warning"
       has-icon
       icon="warning"
       >Almost done! Press <kbd>Enter</kbd> when the last line ends.</b-message
     >
     <b-message
-      :active="hasCompletedTimings && hasMarkedEndOfLastLine"
+      v-model="successMessageVisible"
       type="is-success"
       has-icon
       icon="check"
@@ -77,13 +77,13 @@
       </div>
       <div class="level-item">
         <b-field class="playback-speed" label="Speed: " horizontal>
-          <b-field>
+          <b-field grouped group-multiline>
             <template v-for="val in [0.3, 0.5, 0.7, 0.9, 1.0, 1.5]" :key="val">
               <b-radio-button
                 :size="isMobile ? 'is-small' : ''"
-                class="is-flex"
                 v-model="playbackRate"
                 :native-value="val"
+                class="is-flex-shrink-0"
               >
                 {{ val }}
               </b-radio-button>
@@ -144,14 +144,33 @@ export default defineComponent({
       return (
         this.lyricSegments &&
         this.lyricSegments.length > 0 &&
-        this.currentSegment == this.lyricSegments.length
+        this.currentSegment >= this.lyricSegments.length
       );
     },
     hasMarkedEndOfLastLine() {
       return (
         this.hasCompletedTimings &&
+        this.timings.length > 0 &&
         this.timings.last()[1] == LYRIC_MARKERS.SEGMENT_END
       );
+    },
+    warningMessageVisible: {
+      get() {
+        return this.hasCompletedTimings && !this.hasMarkedEndOfLastLine;
+      },
+      set(value) {
+        // The setter is required for v-model to work, 
+        // but we don't need to do anything here
+      }
+    },
+    successMessageVisible: {
+      get() {
+        return this.hasCompletedTimings && this.hasMarkedEndOfLastLine;
+      },
+      set(value) {
+        // The setter is required for v-model to work, 
+        // but we don't need to do anything here
+      }
     },
     currentScreen() {
       let currentScreen = 0;
@@ -271,5 +290,21 @@ export default defineComponent({
   display: flex;
   flex-grow: 1;
   padding-right: 2em;
+}
+
+.playback-speed :deep(.field-body) {
+  display: flex;
+  flex-direction: row;
+}
+
+.playback-speed :deep(.control) {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+}
+
+.is-flex-shrink-0 {
+  flex-shrink: 0;
+  margin-right: 0.25rem;
 }
 </style>
