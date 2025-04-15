@@ -19,7 +19,14 @@ import {
   faAlignLeft,
   faFlask,
   faStopwatch,
-  faQuestion
+  faQuestion,
+  faWarning,
+  faCheck,
+  faKeyboard,
+  faMinus,
+  faPlus,
+  faSpinner,
+  faWandMagicSparkles,
 } from '@fortawesome/free-solid-svg-icons';
 
 // Import from brands
@@ -47,6 +54,13 @@ library.add(
   faFlask,
   faStopwatch,
   faQuestion,
+  faWarning,
+  faCheck,
+  faKeyboard,
+  faMinus,
+  faPlus,
+  faSpinner,
+  faWandMagicSparkles,
 
   // Brand icons
   faGithub
