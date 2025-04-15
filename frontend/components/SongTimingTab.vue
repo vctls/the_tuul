@@ -77,7 +77,7 @@
       </div>
       <div class="level-item">
         <b-field class="playback-speed" label="Speed: " horizontal>
-          <b-field grouped group-multiline>
+          <b-field class="has-addons">
             <template v-for="val in [0.3, 0.5, 0.7, 0.9, 1.0, 1.5]" :key="val">
               <b-radio-button
                 :size="isMobile ? 'is-small' : ''"
