@@ -1,6 +1,6 @@
 // vitest.config.ts
 import { defineConfig } from 'vitest/config'
-import vue2 from '@vitejs/plugin-vue2'
+import vue2 from '@vitejs/plugin-vue'
 import path from 'path'
 
 export default defineConfig({

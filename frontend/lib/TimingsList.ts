@@ -70,7 +70,7 @@ export default class TimingsList {
     }
 
     last() {
-        return this._timings[this._timings.length - 1];
+        return this._timings.length > 0 ? this._timings[this._timings.length - 1] : [0, 0];
     }
 
     get length() {

@@ -1,6 +1,5 @@
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import Vue from 'vue';
 
 // Import only the specific icons we need
 import {
@@ -20,7 +19,14 @@ import {
   faAlignLeft,
   faFlask,
   faStopwatch,
-  faQuestion
+  faQuestion,
+  faWarning,
+  faCheck,
+  faKeyboard,
+  faMinus,
+  faPlus,
+  faSpinner,
+  faWandMagicSparkles,
 } from '@fortawesome/free-solid-svg-icons';
 
 // Import from brands
@@ -48,12 +54,16 @@ library.add(
   faFlask,
   faStopwatch,
   faQuestion,
-  
+  faWarning,
+  faCheck,
+  faKeyboard,
+  faMinus,
+  faPlus,
+  faSpinner,
+  faWandMagicSparkles,
+
   // Brand icons
   faGithub
 );
-
-// Register the component globally
-Vue.component('font-awesome-icon', FontAwesomeIcon);
 
 export default FontAwesomeIcon;

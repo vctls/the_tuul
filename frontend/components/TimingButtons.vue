@@ -9,8 +9,9 @@
 // Shows buttons for submitting timing info, in case of a mobile device without a hardware keyboard
 
 import { KEY_CODES } from "@/constants";
-import Vue from "vue";
-export default Vue.extend({
+import { defineComponent } from "vue";
+
+export default defineComponent({
   methods: {
     fireSpacebar() {
       this.$emit(
