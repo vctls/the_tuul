@@ -1,7 +1,7 @@
 // https://vitejs.dev/config/
 
 import { defineConfig, UserConfig } from 'vite'
-import vue from '@vitejs/plugin-vue2'
+import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 
 const commonConfig: UserConfig = {
@@ -36,7 +36,6 @@ const commonConfig: UserConfig = {
     resolve: {
         alias: {
             '@': resolve(__dirname, './frontend'),
-            'vue': 'vue/dist/vue.esm.js',
         },
     },
     build: {

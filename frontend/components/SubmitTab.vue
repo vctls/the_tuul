@@ -129,7 +129,7 @@
 
     <div class="submit-button-container">
       <b-message
-        :active="Boolean(submitError)"
+        v-model="submitError"
         type="is-danger"
         has-icon
         icon="circle-exclamation"
@@ -256,7 +256,17 @@ export default defineComponent({
   watch: {
     videoOptions: {
       handler: function (newOptions) {
-        this.saveSettings(newOptions);
+        // Create a clean copy of the options for serialization
+        const optionsCopy = JSON.parse(JSON.stringify({
+          ...newOptions,
+          color: {
+            background: newOptions.color.background.toString(),
+            primary: newOptions.color.primary.toString(),
+            secondary: newOptions.color.secondary.toString()
+          }
+        }));
+        
+        this.saveSettings(optionsCopy);
       },
       deep: true,
     },
@@ -328,18 +338,34 @@ export default defineComponent({
         ) {
           options.vocalSeparationModel = NO_VOCALS_SEPARATOR_MODEL;
         }
-        options.color.background = Color.parseObject(options.color.background);
-        options.color.primary = Color.parseObject(options.color.primary);
-        options.color.secondary = Color.parseObject(options.color.secondary);
-
+        
+        if (!options.color) {
+          return options;
+        }
+        
+        // Create a new color object structure with proper Color objects
+        const newColors = {
+          background: options.color.background ? Color.parse(options.color.background) : this.videoOptions.color.background,
+          primary: options.color.primary ? Color.parse(options.color.primary) : this.videoOptions.color.primary,
+          secondary: options.color.secondary ? Color.parse(options.color.secondary) : this.videoOptions.color.secondary,
+        };
+        
+        options.color = newColors;
+        
         return options;
       } catch (e) {
-        console.error(e);
+        console.error("Error loading settings:", e);
         return {};
       }
     },
     saveSettings(settings: Object) {
-      localStorage.videoOptions = JSON.stringify(settings);
+      try {
+        // Since we're handling color serialization in the watcher,
+        // we can directly stringify the settings here
+        localStorage.videoOptions = JSON.stringify(settings);
+      } catch (e) {
+        console.error("Error saving settings:", e);
+      }
     },
     async separateTrack(
       songFile: File,
