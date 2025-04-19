@@ -49,7 +49,7 @@ export default defineComponent({
   components: { TimingAdjuster, SubtitleDisplay },
   props: {
     lyrics: String,
-    timings: Array,
+    timings: Array<LyricEvent>,
     songInfo: Object,
     enabled: { type: Boolean, default: true },
   },
