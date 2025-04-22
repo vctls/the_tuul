@@ -386,7 +386,7 @@ export class LyricsLine {
 export type LyricEvent = [number, number]
 export type Timestamp = number
 
-export function compileLyricTimings(lyrics: string, events: LyricEvent[]) {
+export function compileLyricTimings(lyrics: string, events: LyricEvent[]): LyricsScreen[] {
   // Read keyboard events in the order they were pressed and construct
   // objects for screens and lines that include the given timing information.
   const segments = (new LyricSegmentIterator(lyrics))[Symbol.iterator]();
@@ -394,6 +394,10 @@ export function compileLyricTimings(lyrics: string, events: LyricEvent[]) {
   let previousSegment = null;
   let line = null;
   let screen = null;
+
+  if (lyrics.length == 0 || events.length == 0) {
+    return [];
+  }
 
   try {
     for (const e of events) {
