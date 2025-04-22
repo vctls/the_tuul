@@ -1,20 +1,10 @@
 <template>
-  <b-tab-item
-    label="Song Timing"
-    icon="stopwatch"
-    class="wrapper song-timing-tab"
-    headerClass="song-timing-tab-header"
-    :disabled="!songFile || lyricSegments.length == 0"
-  >
+  <b-tab-item label="Song Timing" icon="stopwatch" class="wrapper song-timing-tab" headerClass="song-timing-tab-header"
+    :disabled="!songFile || lyricSegments.length == 0">
     <h2 class="title">
       Song Timing
-      <b-button
-        v-if="isMobile"
-        icon="help"
-        icon-right="circle-question"
-        :type="isShowingHelp ? 'is-primary' : ''"
-        @click="isShowingHelp = !isShowingHelp"
-      />
+      <b-button v-if="isMobile" icon="help" icon-right="circle-question" :type="isShowingHelp ? 'is-primary' : ''"
+        @click="isShowingHelp = !isShowingHelp" />
     </h2>
     <b-collapse v-model="isShowingHelp" class="content">
       <p>
@@ -30,48 +20,25 @@
         instrumentals.
       </p>
     </b-collapse>
-    <b-message
-      v-model="warningMessageVisible"
-      type="is-warning"
-      has-icon
-      icon="warning"
-      >Almost done! Press <kbd>Enter</kbd> when the last line ends.</b-message
-    >
-    <b-message
-      v-model="successMessageVisible"
-      type="is-success"
-      has-icon
-      icon="check"
-      >Done! You've got everything you need to create your video. Go to the
-      Submit tab.</b-message
-    >
-    <audio
-      ref="audio"
-      :src="audioSource"
-      @ended="onAudioEvent"
-      @pause="onAudioEvent"
-      @play="onAudioEvent"
-    ></audio>
+    <b-message v-model="warningMessageVisible" type="is-warning" has-icon icon="warning">Almost done! Press
+      <kbd>Enter</kbd> when the last line ends.</b-message>
+    <b-message v-model="successMessageVisible" type="is-success" has-icon icon="check">Done! You've got everything you
+      need to create your video. Go to the
+      Submit tab.</b-message>
+    <audio ref="audio" :src="audioSource" @ended="onAudioEvent" @pause="onAudioEvent" @play="onAudioEvent"></audio>
     <div class="level">
       <div class="level-item">
         <div class="buttons">
-          <b-button
-            type="is-primary"
-            @click="playPause"
-            name="song-timing-play-pause"
-          >
+          <b-button type="is-primary" @click="playPause" name="song-timing-play-pause">
             {{ isPlaying ? "Pause" : "Play" }}
           </b-button>
           <b-button type="is-primary" @click="redoScreen" :active="isPlaying">
             &laquo; Redo This Screen
           </b-button>
           <div class="field">
-            <b-button
-              @click="showButtonKeyboard = !showButtonKeyboard"
-              icon-right="keyboard"
+            <b-button @click="showButtonKeyboard = !showButtonKeyboard" icon-right="keyboard"
               :type="showButtonKeyboard ? 'is-primary' : ''"
-              title="Show or hide buttons for entering timings, if you don't have a keyboard"
-            ></b-button>
+              title="Show or hide buttons for entering timings, if you don't have a keyboard"></b-button>
           </div>
         </div>
       </div>
@@ -79,12 +46,8 @@
         <b-field class="playback-speed" label="Speed: " horizontal>
           <b-field class="has-addons">
             <template v-for="val in [0.3, 0.5, 0.7, 0.9, 1.0, 1.5]" :key="val">
-              <b-radio-button
-                :size="isMobile ? 'is-small' : ''"
-                v-model="playbackRate"
-                :native-value="val"
-                class="is-flex-shrink-0"
-              >
+              <b-radio-button :size="isMobile ? 'is-small' : ''" v-model="playbackRate" :native-value="val"
+                class="is-flex-shrink-0">
                 {{ val }}
               </b-radio-button>
             </template>
@@ -93,11 +56,7 @@
       </div>
     </div>
 
-    <lyric-display
-      :lyric-segments="lyricSegments"
-      :current-segment="currentSegment"
-      @keydown="onKeyDown"
-    >
+    <lyric-display :lyric-segments="lyricSegments" :current-segment="currentSegment" @keydown="onKeyDown">
     </lyric-display>
     <timing-buttons v-if="showButtonKeyboard" @keydown="onKeyDown" />
   </b-tab-item>
@@ -111,13 +70,17 @@ import LyricDisplay from "@/components/LyricDisplay.vue";
 import TimingButtons from "@/components/TimingButtons.vue";
 import TimingsList from "@/lib/TimingsList";
 
-interface LyricTimingEvent {}
+interface LyricTimingEvent { }
 
 export default defineComponent({
   components: { LyricDisplay, TimingButtons },
   props: {
     songInfo: Object,
     lyricSegments: Array,
+    modelValue: {
+      type: Array,
+      default: () => []
+    },
   },
   data() {
     return {
@@ -126,7 +89,6 @@ export default defineComponent({
       isShowingHelp: !isMobile(),
       playbackRate: 1.0,
       showButtonKeyboard: isMobile(),
-      timings: new TimingsList(),
     };
   },
   computed: {
@@ -147,11 +109,22 @@ export default defineComponent({
         this.currentSegment >= this.lyricSegments.length
       );
     },
+    // TODO: centralize timings into a Pinia store
+    timingsList: {
+      get() {
+        // Convert raw array to TimingsList using the constructor
+        return new TimingsList(this.modelValue || []);
+      },
+      set(newTimingsList) {
+        // Extract raw timings array and emit up to parent
+        this.$emit('update:modelValue', newTimingsList.toArray());
+      }
+    },
     hasMarkedEndOfLastLine() {
       return (
         this.hasCompletedTimings &&
-        this.timings.length > 0 &&
-        this.timings.last()[1] == LYRIC_MARKERS.SEGMENT_END
+        this.timingsList.length > 0 &&
+        this.timingsList.last()[1] == LYRIC_MARKERS.SEGMENT_END
       );
     },
     warningMessageVisible: {
@@ -159,8 +132,6 @@ export default defineComponent({
         return this.hasCompletedTimings && !this.hasMarkedEndOfLastLine;
       },
       set(value) {
-        // The setter is required for v-model to work, 
-        // but we don't need to do anything here
       }
     },
     successMessageVisible: {
@@ -168,8 +139,6 @@ export default defineComponent({
         return this.hasCompletedTimings && this.hasMarkedEndOfLastLine;
       },
       set(value) {
-        // The setter is required for v-model to work, 
-        // but we don't need to do anything here
       }
     },
     currentScreen() {
@@ -214,21 +183,28 @@ export default defineComponent({
     },
     addTimingEvent(keyCode, currentSongTime) {
       if (keyCode == KEY_CODES.ENTER) {
-        this.timings.add(this.currentSegment - 1, keyCode, currentSongTime);
+        // Using a temporary variable to ensure Vue reactivity
+        const newTimingsList = this.timingsList;
+        newTimingsList.add(this.currentSegment - 1, keyCode, currentSongTime);
+        this.timingsList = newTimingsList;
       } else if (keyCode == KEY_CODES.SPACEBAR) {
         this.advanceToNextSegment(keyCode, currentSongTime);
       }
-      this.$emit(
-        "timings-change",
-        this.timings.toArray(),
+      // areTimingsFinished is emitted through the update:modelValue event
+      this.$nextTick(() => this.$emit(
+        "areTimingsFinished",
         this.hasMarkedEndOfLastLine
-      );
+      ));
+
     },
     advanceToNextSegment(keyCode, currentSongTime) {
       if (this.currentSegment >= this.lyricSegments.length) {
         return;
       }
-      this.timings.add(this.currentSegment, keyCode, currentSongTime);
+      // Using a temporary variable to ensure Vue reactivity
+      const newTimingsList = this.timingsList;
+      newTimingsList.add(this.currentSegment, keyCode, currentSongTime);
+      this.timingsList = newTimingsList;
       this.currentSegment += 1;
     },
     playPause() {
@@ -253,7 +229,10 @@ export default defineComponent({
         firstSegmentInScreen,
         5
       );
-      this.timings.setCurrentSegment(firstSegmentInScreen);
+      // Using a temporary variable to ensure Vue reactivity
+      const newTimingsList = this.timingsList;
+      newTimingsList.setCurrentSegment(firstSegmentInScreen);
+      this.timingsList = newTimingsList;
       this.currentSegment = firstSegmentInScreen;
     },
     firstSegmentOfScreen(screenNum) {
@@ -272,7 +251,7 @@ export default defineComponent({
       return segmentNum;
     },
     secondsBeforeSegment(segmentNum, seconds) {
-      const segmentStart = this.timings.timingForSegmentNum(segmentNum);
+      const segmentStart = this.timingsList.timingForSegmentNum(segmentNum);
       return Math.max(segmentStart - seconds, 0);
     },
     isSegmentEndOfScreen(segment, segmentIndex) {

@@ -540,7 +540,7 @@ class RegionsPlugin extends BasePlugin<RegionsPluginEvents, RegionsPluginOptions
     private avoidOverlapping(newRegion: Region) {
         // Ensure regions don't overlap
         this.regions.forEach((reg) => {
-            if (reg === newRegion) return
+            if (reg.id === newRegion.id) return
             if (newRegion.isOpenEnded) {
                 if (reg.isOpenEnded) return
                 if (reg.start < newRegion.start && newRegion.start < reg.end) {

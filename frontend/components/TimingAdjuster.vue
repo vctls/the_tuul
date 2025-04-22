@@ -85,8 +85,11 @@ export default defineComponent({
     }
   },
   watch: {
-    timings(newTimings: Array<LyricEvent>) {
-      this.regions = this.createRegions(newTimings, this.splitLyrics);
+    timings: {
+      handler: function(newTimings: Array<LyricEvent>){
+        this.regions = this.createRegions(newTimings, this.splitLyrics);
+      },
+      deep: true
     },
     lyrics(newLyrics: String) {
       this.regions = this.createRegions(this.timings, this.splitLyrics);

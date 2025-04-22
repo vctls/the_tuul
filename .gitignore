@@ -6,4 +6,9 @@ node_modules/
 api/static-build
 api/staticroot/
 .env
-api/assets/**/*.m4a
+api/assets/dev/
+api/assets/bundles/
+.devcontainer
+.lsp
+test-results/
+playwright-report/
