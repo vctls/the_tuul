@@ -24,7 +24,7 @@
       v-if="songFile && subtitles"
       ref="timing-adjuster"
       :lyrics="lyrics"
-      :timings="timings"
+      :timings="modelValue"
       :audioData="songFile"
       :vocalTrack="vocalTrack"
       @input="onTimingsChange"
@@ -49,7 +49,7 @@ export default defineComponent({
   components: { TimingAdjuster, SubtitleDisplay },
   props: {
     lyrics: String,
-    timings: Array,
+    modelValue: Array<LyricEvent>,
     songInfo: Object,
     enabled: { type: Boolean, default: true },
   },
@@ -73,14 +73,13 @@ export default defineComponent({
       return this.musicSeparationStore.separatedTrack?.vocals || null;
     },
     subtitles() {
-      console.log("Creating subtitles", this);
       try {
-        if (!this.timings) {
+        if (!this.modelValue) {
           return "";
         }
         return createAssFile(
           this.lyrics,
-          this.timings,
+          this.modelValue,
           this.songInfo.duration,
           "",
           "",
@@ -105,7 +104,7 @@ export default defineComponent({
   },
   methods: {
     onTimingsChange(newTimings: Array<LyricEvent>) {
-      this.$emit("input", newTimings);
+      this.$emit("update:modelValue", newTimings);
     },
     onPlayheadUpdate(newPlayhead: number) {
       if (newPlayhead !== this.playhead) {

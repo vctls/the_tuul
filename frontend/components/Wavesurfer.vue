@@ -1,8 +1,5 @@
 <template>
-  <div
-    ref="wavesurfer-container"
-    :class="['wavesurfer-container', { 'hide-waveform': !showWaveform }]"
-  ></div>
+  <div ref="wavesurfer-container" :class="['wavesurfer-container', { 'hide-waveform': !showWaveform }]"></div>
 </template>
 
 <script lang="ts">
@@ -134,17 +131,15 @@ export default defineComponent({
         this.wavesurfer.loadBlob(newAudioData);
       }
     },
-    regions(newRegions) {
-      // Add regions after audio is decoded or they won't render right
-      console.log("updating regions", newRegions.length);
-      if (this.isReady()) {
-        this.updateRegions(newRegions);
-      } else {
-        const unsubscribe = this.wavesurfer.on("ready", () => {
+    regions: {
+      handler: function (newRegions) {
+        // Add regions after audio is decoded or they won't render right
+        console.log("updating regions", newRegions.length);
+        if (this.isReady()) {
           this.updateRegions(newRegions);
-          unsubscribe();
-        });
-      }
+        }
+      },
+      deep: true
     },
   },
   methods: {

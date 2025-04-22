@@ -6,8 +6,8 @@ type LyricMarker = number;
 
 export default class TimingsList {
     _timings: Array<[number, LyricMarker]>;
-    constructor() {
-        this._timings = [];
+    constructor(initialTimings: Array<[number, LyricMarker]> = []) {
+        this._timings = [...initialTimings];
     }
     add(currentSegmentNum, keyCode, timestamp) {
         if (currentSegmentNum < 0) {

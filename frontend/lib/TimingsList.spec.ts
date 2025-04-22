@@ -9,3 +9,21 @@ test("TimingsList conflicts should be resolved", () => {
 
     expect(t.toArray()[1]).toStrictEqual([2.5, LYRIC_MARKERS.SEGMENT_START])
 });
+
+test("TimingsList can be initialized with initial timings", () => {
+    const initialTimings: Array<[number, number]> = [
+        [1.0, LYRIC_MARKERS.SEGMENT_START],
+        [2.0, LYRIC_MARKERS.SEGMENT_END],
+        [3.0, LYRIC_MARKERS.SEGMENT_START]
+    ];
+
+    const t = new TimingsList(initialTimings);
+
+    expect(t.toArray()).toHaveLength(3);
+    expect(t.toArray()).toStrictEqual(initialTimings);
+
+    // Add additional timing
+    t.add(2, KEY_CODES.ENTER, 4.0);
+    expect(t.toArray()).toHaveLength(4);
+    expect(t.toArray()[3]).toStrictEqual([4.0, LYRIC_MARKERS.SEGMENT_END]);
+});

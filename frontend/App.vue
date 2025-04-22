@@ -50,16 +50,15 @@
       ></song-info-tab>
       <lyric-input-tab v-model="lyricText"></lyric-input-tab>
       <song-timing-tab
-        @timings-change="onTimingsChange"
+        v-model="timings"
+        @areTimingsFinished="onTimingsFinished"
         :song-info="songInfo"
         :lyric-segments="lyricSegments"
-        :timings="timings"
       ></song-timing-tab>
       <timing-adjustment-tab
         :lyrics="lyricText"
-        :timings="timings"
+        v-model="timings"
         :songInfo="songInfo"
-        @input="onTimingsChange"
         :enabled="timings && timings.length > 0"
       />
       <submit-tab
@@ -142,8 +141,10 @@ export default defineComponent({
     isMobile,
   },
   methods: {
-    onTimingsChange(timings: Array<LyricEvent>, areTimingsFinished: boolean) {
+    onTimingsChange(timings: Array<LyricEvent>) {
       this.timings = timings;
+    },
+    onTimingsFinished(areTimingsFinished: boolean) {
       if (typeof areTimingsFinished === "boolean") {
         this.areTimingsFinished = areTimingsFinished;
       }
@@ -153,7 +154,8 @@ export default defineComponent({
         if (key == "backingTrack") {
           this.musicSeparationStore.setBackingTrack(newOptions[key]);
         } else if (key == "timings") {
-          this.onTimingsChange(newOptions[key], true);
+          this.timings = newOptions[key];
+          this.areTimingsFinished = true;
         } else if (Object.hasOwnProperty.call(newOptions, key)) {
           const newValue = newOptions[key];
           this[key] = newValue;
