@@ -17,7 +17,7 @@ import { defineComponent } from "vue";
 
 export default defineComponent({
   inheritAttrs: false,
-  emits: ["timeupdate", "seeking", "error", "play", "pause"],
+  emits: ["timeupdate", "seeking", "error", "play", "pause", "seeked", "waiting"],
   data() {
     return {
       animationFrameId: null as number | null,

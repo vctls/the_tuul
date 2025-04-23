@@ -50,7 +50,6 @@ export function setupErrorHandling() {
                 vue: vm ? {
                     component: vm.$options?.name || 'unknown',
                     props: vm.$props,
-                    route: vm.$route?.path
                 } : undefined
             }),
         }).catch(e => {

@@ -134,7 +134,6 @@ export default defineComponent({
     regions: {
       handler: function (newRegions) {
         // Add regions after audio is decoded or they won't render right
-        console.log("updating regions", newRegions.length);
         if (this.isReady()) {
           this.updateRegions(newRegions);
         }

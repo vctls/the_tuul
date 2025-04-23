@@ -440,7 +440,6 @@ class SingleRegion extends EventEmitter<RegionEvents> implements Region {
 
     /** Remove the region */
     public remove() {
-        console.log('remove', this.id);
         // Clean up subscriptions before removing element
         this.subscriptions.forEach((unsubscribe) => unsubscribe());
         this.subscriptions = [];
