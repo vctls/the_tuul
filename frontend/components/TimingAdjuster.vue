@@ -1,25 +1,10 @@
 <template>
   <div>
-    <smooth-audio-player
-      ref="audioPlayer"
-      controls
-      :src="audioSource"
-      @timeupdate="onAudioTimeUpdate"
-      @seeking="onAudioSeeking"
-      @play="onAudioPlay"
-      @pause="onAudioPause"
-      @error="onAudioError"
-    />
-    <wavesurfer
-      ref="wavesurfer"
-      :audioData="vocalTrack || audioData"
-      :regions="regions"
-      :mediaControls="false"
-      :showWaveform="true || Boolean(vocalTrack)"
-      @region-updated="onRegionUpdated"
-      @timeupdate="onWavesurferTimeUpdate"
-      @click="onWavesurferSeeking"
-    />
+    <smooth-audio-player ref="audioPlayer" controls :src="audioSource" @timeupdate="onAudioTimeUpdate"
+      @seeking="onAudioSeeking" @play="onAudioPlay" @pause="onAudioPause" @error="onAudioError" />
+    <wavesurfer ref="wavesurfer" :audioData="vocalTrack || audioData" :regions="regions" :mediaControls="false"
+      :showWaveform="true || Boolean(vocalTrack)" @region-updated="onRegionUpdated" @timeupdate="onWavesurferTimeUpdate"
+      @click="onWavesurferSeeking" />
   </div>
 </template>
 
@@ -86,7 +71,7 @@ export default defineComponent({
   },
   watch: {
     timings: {
-      handler: function(newTimings: Array<LyricEvent>){
+      handler: function (newTimings: Array<LyricEvent>) {
         this.regions = this.createRegions(newTimings, this.splitLyrics);
       },
       deep: true
@@ -139,7 +124,7 @@ export default defineComponent({
     },
     onRegionUpdated(region: Region) {
       const newTimings = this.applyRegionUpdateToTimings(region, this.timings);
-      this.$emit("input", newTimings);
+      this.$emit("timingschange", newTimings);
       this.$nextTick(() => {
         this.previewNewTiming(region);
       });
