@@ -1,11 +1,6 @@
 <template>
-  <b-tab-item
-    icon="flask"
-    label="Adjust (BETA)"
-    :disabled="!enabled"
-    class="timing-adjustment-tab"
-    headerClass="timing-adjustment-tab-header"
-  >
+  <b-tab-item icon="flask" label="Adjust (BETA)" :disabled="!enabled" class="timing-adjustment-tab"
+    headerClass="timing-adjustment-tab-header">
     <div class="content">
       <p>
         Use this tab to adjust lyric timings by dragging the start of the
@@ -13,24 +8,11 @@
         you can also adjust the end of it.
       </p>
     </div>
-    <subtitle-display
-      class="subtitle-display"
-      v-if="songFile && subtitles"
-      ref="subtitleDisplay"
-      :subtitles="subtitles"
-      :fonts="{}"
-    />
-    <timing-adjuster
-      v-if="songFile && subtitles"
-      ref="timing-adjuster"
-      :lyrics="lyrics"
-      :timings="modelValue"
-      :audioData="songFile"
-      :vocalTrack="vocalTrack"
-      @input="onTimingsChange"
-      @timeupdate="onPlayheadUpdate"
-      @seeking="onPlayheadUpdate"
-    />
+    <subtitle-display class="subtitle-display" v-if="songFile && subtitles" ref="subtitleDisplay" :subtitles="subtitles"
+      :fonts="{}" />
+    <timing-adjuster v-if="songFile && subtitles" ref="timing-adjuster" :lyrics="lyrics" :timings="modelValue"
+      :audioData="songFile" :vocalTrack="vocalTrack" @timingschange="onTimingsChange" @timeupdate="onPlayheadUpdate"
+      @seeking="onPlayheadUpdate" />
   </b-tab-item>
 </template>
 
