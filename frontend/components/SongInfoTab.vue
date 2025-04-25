@@ -5,9 +5,8 @@
   >
     <template #header>
       <b-icon v-if="!isSeparatingTrack" icon="file-audio"></b-icon>
-      <b-tooltip v-else label="Separating track" position="is-right"
-        ><b-icon icon="loader" custom-class="loader"></b-icon
-      ></b-tooltip>
+      <b-tooltip v-else label="Separating track" position="is-bottom"><span class="icon is-small loader"></span>
+      </b-tooltip>
       <span> Song File</span>
     </template>
     <div class="container">
