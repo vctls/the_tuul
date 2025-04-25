@@ -67,7 +67,7 @@
         </li>
       </ul>
       <h3>What's New</h3>
-      <h5>0.12 - March 14, 2025</h5>
+      <h5>0.13 - April 24, 2025</h5>
       <ul>
         <li>Initial beta of new timing-adjustment interface!</li>
         <li>
@@ -75,7 +75,7 @@
           self-hosters out there, you can give it a SOCKS5 proxy for downloading
           YouTubes.
         </li>
-        <li>Switched to Vitest from Jest</li>
+        <li>Many under-the-hood fixes, including migrations to vitest, vite and Vue 3.</li>
       </ul>
       <h5>0.11 - February 19, 2025</h5>
       <ul>
