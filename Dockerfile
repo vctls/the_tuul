@@ -1,6 +1,6 @@
 # Use an official lightweight Python image.
 # https://hub.docker.com/_/python
-FROM python:3.11-slim AS builder
+FROM python:3.12-slim AS builder
 
 ENV APP_HOME=/app
 # Setting this ensures print statements and log messages
@@ -31,7 +31,7 @@ RUN poetry install --without dev --no-root --no-interaction --no-ansi
 
 # Note that this image does not use poetry at all
 
-FROM python:3.11-slim AS runner
+FROM python:3.12-slim AS runner
 
 ENV APP_HOME=/app \
     PYTHONUNBUFFERED=TRUE \
