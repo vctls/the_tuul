@@ -22,8 +22,6 @@ import views
 urlpatterns = [
     path("", views.Index.as_view()),
     path("separate_track", views.SeparateTrack.as_view(), name="separate_track"),
-    path("generate_video", views.GenerateVideo.as_view(), name="generate_video"),
     path("download_video", views.DownloadYouTubeVideo.as_view(), name="download_video"),
     path("log_error", views.LogError.as_view(), name="log_error"),
-    # path("admin/", admin.site.urls),
 ]
