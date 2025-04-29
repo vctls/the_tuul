@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 
 from karaoke import music_separation
-from helpers import youtube_helper
+from helpers import youtube_helper, zip_helper
 
 logger = structlog.get_logger(__name__)
 
@@ -54,17 +54,10 @@ class SeparateTrack(APIView):
             accompaniment_path, vocal_path = music_separation.split_song(
                 song_file_path, song_files_dir_path, model_name=model_name
             )
-            zip_path = song_files_dir_path / "split_song.zip"
-            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zip_file:
-                zip_file.write(
-                    accompaniment_path,
-                    "accompaniment.wav",
-                )
-                zip_file.write(
-                    vocal_path,
-                    "vocals.wav",
-                )
-
+            zip_path = zip_helper.create_zip_file(
+                song_files_dir_path / "split_song.zip",
+                [(accompaniment_path, "accompaniment.wav"), (vocal_path, "vocals.wav")],
+            )
             logger.info("zip_complete", path=zip_path)
             return streamed_response(zip_path)
 
@@ -101,17 +94,14 @@ class DownloadYouTubeVideo(APIView):
             )
             logger.info("metadata", metadata=metadata)
             (song_files_dir_path / "metadata.json").write_text(json.dumps(metadata))
-            zip_path = song_files_dir_path / "youtube_video.zip"
-            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zip_file:
-                zip_file.write(
-                    audio_path,
-                    "audio.mp4",
-                )
-                zip_file.write(
-                    video_path,
-                    "video.mp4",
-                )
-                zip_file.write(song_files_dir_path / "metadata.json", "metadata.json")
+            zip_path = zip_helper.create_zip_file(
+                song_files_dir_path / "youtube_video.zip",
+                [
+                    (audio_path, "audio.mp4"),
+                    (video_path, "video.mp4"),
+                    (song_files_dir_path / "metadata.json", "metadata.json"),
+                ],
+            )
 
             logger.info("zip_complete", path=zip_path)
             return streamed_response(zip_path)
