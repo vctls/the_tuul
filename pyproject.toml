@@ -6,8 +6,7 @@ authors = ["Dan Kurtz  <andfurthermore@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-# numpy 1.26.4 is the last 1.x release and doesn't work with 3.13
-python = ">=3.12,<3.13"
+python = ">=3.13,<3.14"
 Django = "^5.2"
 djangorestframework = "^3.16.0"
 click = "^8.1.7"

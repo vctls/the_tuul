@@ -1,12 +1,12 @@
 # Use an official lightweight Python image.
 # https://hub.docker.com/_/python
-FROM python:3.12-slim AS builder
+FROM python:3.13-slim AS builder
 
 ENV APP_HOME=/app
 # Setting this ensures print statements and log messages
 # promptly appear in Cloud Logging.
 ENV PYTHONUNBUFFERED=TRUE \
-    POETRY_VERSION=1.8.3 \
+    POETRY_VERSION=2.1.2 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \
     POETRY_VIRTUALENVS_CREATE=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
@@ -31,7 +31,7 @@ RUN poetry install --without dev --no-root --no-interaction --no-ansi
 
 # Note that this image does not use poetry at all
 
-FROM python:3.12-slim AS runner
+FROM python:3.13-slim AS runner
 
 ENV APP_HOME=/app \
     PYTHONUNBUFFERED=TRUE \
