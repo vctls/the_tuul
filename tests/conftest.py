@@ -1,4 +1,5 @@
 import sys
+import os
 from pathlib import Path
 
 # Add the api directory to the sys.path
