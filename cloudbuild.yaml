@@ -1,20 +1,14 @@
 steps:
-  - name: "node:22"
-    entrypoint: "npm"
-    args: ["install"]
-  # Build the frontend
-  - name: "node:22"
-    entrypoint: "npm"
-    args: ["run", "build"]
-    env:
-      - "TUUL_API_HOSTNAME=$_API_HOSTNAME"
-      - "TUUL_DONATE_URL=$_DONATE_URL"
   # Build the container image after pulling in large model files
   - name: "gcr.io/cloud-builders/docker"
     script: |
       #!/usr/bin/env bash
       echo "Building ${_DOCKER_IMAGE}"
-      docker buildx build -t "${_DOCKER_IMAGE}:latest" --cache-from "${_DOCKER_IMAGE}:latest" .
+      docker buildx build -t "${_DOCKER_IMAGE}:latest" \
+        --cache-from "${_DOCKER_IMAGE}:latest" \
+        --build-arg TUUL_API_HOSTNAME="${_API_HOSTNAME}" \
+        --build-arg TUUL_DONATE_URL="${_DONATE_URL}" \
+        .
     automapSubstitutions: true
   # Push the container image to Container Registry
   - id: "container_push"

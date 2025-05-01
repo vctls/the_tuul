@@ -1,6 +1,28 @@
+# Stage 1: Frontend builder
+FROM node:22-slim AS frontend-builder
+
+ARG TUUL_API_HOSTNAME="" \
+    TUUL_DONATE_URL="https://ko-fi.com/incidentist"
+
+ENV TUUL_API_HOSTNAME=$TUUL_API_HOSTNAME \
+    TUUL_DONATE_URL=$TUUL_DONATE_URL
+
+WORKDIR /app
+
+# Copy frontend source files
+COPY package.json package-lock.json ./
+RUN npm clean-install
+
+# Copy the rest of the frontend source
+COPY frontend/ ./frontend/
+COPY vite.config.*.ts tsconfig.json jsconfig.json ./
+
+# Build the frontend
+RUN npm run build
+
 # Use an official lightweight Python image.
 # https://hub.docker.com/_/python
-FROM python:3.13-slim AS builder
+FROM python:3.13-slim AS backend-builder
 
 ENV APP_HOME=/app
 # Setting this ensures print statements and log messages
@@ -29,8 +51,6 @@ RUN poetry install --without dev --no-root --no-interaction --no-ansi
 # RUNTIME IMAGE
 #
 
-# Note that this image does not use poetry at all
-
 FROM python:3.13-slim AS runner
 
 ENV APP_HOME=/app \
@@ -48,7 +68,7 @@ ENV APP_HOME=/app \
 WORKDIR $APP_HOME
 
 # Copy installed dependencies from builder
-COPY --from=builder $VIRTUAL_ENV $VIRTUAL_ENV
+COPY --from=backend-builder $VIRTUAL_ENV $VIRTUAL_ENV
 
 # Install runtime dependencies
 RUN apt-get update \
@@ -59,6 +79,11 @@ RUN apt-get update \
 
 # Copy local code to the container image.
 COPY api .
+# Copy frontend static files from the node builder to the correct location
+# for Django to serve them (based on settings.py)
+COPY --from=frontend-builder /app/api/assets/bundles assets/bundles
+
+# Run collectstatic to gather all static files
 RUN ./manage.py collectstatic --noinput
 
 EXPOSE $PORT
