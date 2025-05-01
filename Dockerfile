@@ -40,8 +40,7 @@ WORKDIR $APP_HOME
 # Install dependencies.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg build-essential \
-    && pip install "poetry==$POETRY_VERSION" \
-    && poetry config virtualenvs.create false
+    && pip install "poetry==$POETRY_VERSION"
 
 COPY ./poetry.lock ./pyproject.toml ./
 
