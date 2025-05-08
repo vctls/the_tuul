@@ -30,6 +30,9 @@ SECRET_KEY = os.getenv("SECRET_KEY", "frabbaglabba")
 DEBUG = os.getenv("DEBUG", True) != "False"
 ALLOWED_HOSTS = ["*"]
 
+# Google Cloud Storage bucket for caching separated tracks
+SEPARATED_TRACKS_BUCKET = os.getenv("SEPARATED_TRACKS_BUCKET", "")
+
 
 # Application definition
 

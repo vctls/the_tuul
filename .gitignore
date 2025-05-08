@@ -12,3 +12,4 @@ api/assets/bundles/
 .lsp
 test-results/
 playwright-report/
+google-application-credentials.json
