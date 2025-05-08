@@ -2,9 +2,11 @@ import json
 import tempfile
 from pathlib import Path
 import zipfile
+import os
 
 import structlog
 
+from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.http import StreamingHttpResponse
 from django.core.files import File
@@ -15,7 +17,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 
 from karaoke import music_separation
-from helpers import youtube_helper, zip_helper
+from helpers import youtube_helper, zip_helper, cloud_storage
 
 logger = structlog.get_logger(__name__)
 
@@ -48,6 +50,19 @@ class SeparateTrack(APIView):
             song_size=len(song_file),
             model_name=model_name,
         )
+
+        # Check if we can fetch from cache
+        if settings.SEPARATED_TRACKS_BUCKET:
+            cache_hash = cloud_storage.get_cache_hash(model_name, song_file)
+            logger.info("checking_cache", cache_hash=cache_hash)
+
+            # Try to fetch from cache
+            cached_zip_path = cloud_storage.fetch_from_cache(cache_hash)
+            if cached_zip_path:
+                logger.info("serving_from_cache", cache_hash=cache_hash, path=cached_zip_path)
+                return streamed_response(cached_zip_path)
+
+        # If no cache hit or caching is disabled, proceed with normal track separation
         with tempfile.TemporaryDirectory() as song_files_dir:
             song_files_dir_path = Path(song_files_dir)
             song_file_path = self.setup_song_files_dir(song_files_dir, song_file)
@@ -59,6 +74,12 @@ class SeparateTrack(APIView):
                 [(accompaniment_path, "accompaniment.wav"), (vocal_path, "vocals.wav")],
             )
             logger.info("zip_complete", path=zip_path)
+
+            # Upload to cache if caching is enabled
+            if settings.SEPARATED_TRACKS_BUCKET:
+                cache_hash = cloud_storage.get_cache_hash(model_name, song_file)
+                cloud_storage.upload_to_cache(cache_hash, zip_path)
+
             return streamed_response(zip_path)
 
     def setup_song_files_dir(self, files_dir: str, song_file: File) -> Path:
