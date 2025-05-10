@@ -31,7 +31,7 @@ steps:
         "--concurrency=40",
         "--cpu=1",
         "--memory=2Gi",
-        "--set-env-vars",
+        "--update-env-vars",
         "LOGGING_FORMAT=gcp,DEBUG=False",
       ]
   # Deploy API service for high-intensity requests
@@ -53,7 +53,7 @@ steps:
         "--memory=8Gi",
         "--timeout=2400s",
         "--no-cpu-throttling",
-        "--set-env-vars",
+        "--update-env-vars",
         "LOGGING_FORMAT=gcp,DEBUG=False",
       ]
 timeout: 1800s
