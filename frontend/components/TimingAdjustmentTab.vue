@@ -1,6 +1,7 @@
 <template>
   <b-tab-item icon="flask" label="Adjust (BETA)" :disabled="!isEnabled" class="timing-adjustment-tab"
     headerClass="timing-adjustment-tab-header">
+    <h2 class="title">Adjust Timings</h2>
     <div class="content">
       <p>
         Use this tab to adjust lyric timings by dragging the start of the

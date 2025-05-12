@@ -2,23 +2,14 @@
   <div class="is-size-7 has-text-centered has-text-gray">
     <span>Source files: </span>
     lyrics.txt
-    <a @click="download(lyrics, 'lyrics.txt')" title="download"
-      ><b-icon icon="download" /></a
-    ><a @click="copyToClipboard(lyrics)" title="copy to clipboard"
-      ><b-icon icon="copy"
-    /></a>
+    <a @click="download(lyrics, 'lyrics.txt')" title="download lyrics"><b-icon icon="download" /></a><a
+      @click="copyToClipboard(lyrics)" title="copy lyrics to clipboard"><b-icon icon="copy" /></a>
     &bullet; timings.json
-    <a @click="download(timings, 'timings.json')" title="download"
-      ><b-icon icon="download" /></a
-    ><a @click="copyToClipboard(timings)" title="copy to clipboard"
-      ><b-icon icon="copy"
-    /></a>
+    <a @click="download(timings, 'timings.json')" title="download timings"><b-icon icon="download" /></a><a
+      @click="copyToClipboard(timings)" title="copy timings to clipboard"><b-icon icon="copy" /></a>
     &bullet; subtitles.ass
-    <a @click="download(subtitles, 'subtitles.ass')" title="download"
-      ><b-icon icon="download" /></a
-    ><a @click="copyToClipboard(subtitles)" title="copy to clipboard"
-      ><b-icon icon="copy"
-    /></a>
+    <a @click="download(subtitles, 'subtitles.ass')" title="download subtitles"><b-icon icon="download" /></a><a
+      @click="copyToClipboard(subtitles)" title="copy subtitles to clipboard"><b-icon icon="copy" /></a>
   </div>
 </template>
 

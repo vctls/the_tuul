@@ -1,30 +1,28 @@
 import { test, expect } from '@playwright/test';
-import path from 'path';
+import {
+  setupTestEnvironment,
+  navigateToTab,
+  TabId,
+  loadAndEnterLyrics,
+  addUnderscoresToLyrics,
+  toggleMagicSlashes
+} from './utils';
 
 test.describe('Lyrics Tab Functionality', () => {
   test.beforeEach(async ({ page }) => {
-    // Log console messages
-    page.on('console', msg => {
-      const type = msg.type();
-      console.log(`Console ${type}: ${msg.text()}`);
-    });
-
-    // Navigate to app
-    await page.goto('/');
-    await expect(page).toHaveTitle("The Tuul");
+    await setupTestEnvironment(page);
   });
 
   test('Lyrics tab functionality - Add Underscore and Magic Slashes', async ({ page }) => {
     // 1. Navigate directly to Lyrics tab
-    await page.click("nav.tabs .lyric-input-tab-header");
-    await expect(page.locator('h2:has-text("Song Lyrics")')).toBeVisible();
+    await navigateToTab(page, TabId.LyricInput);
 
     // 2. Add some test lyrics with repeated words
     const testLyrics = "Look at the stars look how they shine for you\nAnd everything you do yeah they were all yellow";
-    await page.locator('.lyric-input-tab .lyric-editor-textarea').pressSequentially(testLyrics);
+    await loadAndEnterLyrics(page, testLyrics);
 
     // 3. Test Add Underscores button
-    await page.click("button:has-text('Add Underscores')");
+    await addUnderscoresToLyrics(page);
 
     // Verify spaces were converted to underscores
     const textAreaLocator = page.locator('.lyric-input-tab .lyric-editor-textarea');
@@ -64,14 +62,14 @@ test.describe('Lyrics Tab Functionality', () => {
 
     // 6. Test behavior when Magic Slashes is unchecked
     // Create new lyrics for a clean test
-    await textAreaLocator.fill("Hello hello hello");
+    await loadAndEnterLyrics(page, "Hello hello hello");
 
     // Convert spaces to underscores
-    await page.click("button:has-text('Add Underscores')");
+    await addUnderscoresToLyrics(page);
     expect(await textAreaLocator.inputValue()).toBe("Hello_hello_hello");
 
-    // Uncheck the Magic Slashes checkbox by clicking on the label instead of the hidden input
-    await page.click('.lyric-input-tab .level-item .checkbox');
+    // Uncheck the Magic Slashes checkbox
+    await toggleMagicSlashes(page, false);
     await expect(page.locator('.lyric-input-tab input[type="checkbox"]')).not.toBeChecked();
 
     // Add a slash to the first "Hello"

@@ -10,6 +10,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "e2e": "playwright test",
     "dev": "vite --host --config vite.config.dev.ts",
     "build": "vite build --mode production --config vite.config.prod.ts",
     "build-dev": "vite build --config vite.config.dev.ts",

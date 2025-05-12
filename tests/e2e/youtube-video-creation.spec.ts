@@ -4,69 +4,86 @@ import {
   setupTestEnvironment,
   navigateToTab,
   TabId,
-  uploadAudioFile,
   loadAndEnterLyrics,
   mockSeparateTrackApi,
   expectTabToBeDisabled,
   expectTabToBeEnabled,
   loadAndEnterTimings,
   expectSuccessMessage,
-  expectFileDownload
+  expectFileDownload,
+  mockYouTubeDownloadApi,
+  enterYouTubeUrl,
+  getCurrentTimings,
+  loadFixtureJson,
+  expectTimingsToMatch
 } from './utils';
 
-test.describe('Karaoke Track Creation', () => {
+test.describe('YouTube Karaoke Video Creation', () => {
   test.describe.configure({ timeout: 300000 }); // 5 minutes
 
   test.beforeEach(async ({ page }) => {
     await setupTestEnvironment(page);
   });
 
-  test('Create a complete karaoke track', async ({ page, context }) => {
-    // Setup API mock
+  test('Create a complete karaoke video from YouTube URL', async ({ page, context }) => {
+    // Setup API mocks first
     await mockSeparateTrackApi(context);
+    await mockYouTubeDownloadApi(context);
 
-    // 1. Navigate to Song Info tab and upload audio
+    // 1. Navigate to Song Info tab
     await navigateToTab(page, TabId.SongInfo);
-    await uploadAudioFile(page, defaultTestConfig.audioFile, "David Byrne", "My Fair Lady");
 
-    // 2. Verify Song Timing tab is initially disabled
+    // 2. Enter YouTube URL and load it
+    await enterYouTubeUrl(
+      page,
+      'https://www.youtube.com/watch?v=gVw-wI1GeqI',
+      'Beastie Boys - Topic',
+      'Now Get Busy'
+    );
+
+    // 3. Verify Song Timing tab is initially disabled
     await expectTabToBeDisabled(page, TabId.SongTiming);
 
-    // 3. Navigate to Lyrics tab and enter lyrics
+    // 4. Navigate to Lyrics tab and enter lyrics
     await navigateToTab(page, TabId.LyricInput);
     await loadAndEnterLyrics(page, defaultTestConfig.lyricsFile);
-
-    // Take screenshot
-    await page.screenshot({ path: 'lyrics.png' });
 
     // Go back to Song Info tab to refresh tab states
     await navigateToTab(page, TabId.SongInfo);
 
-    // 4. Verify Song Timing tab is now enabled
+    // 5. Verify Song Timing tab is now enabled
     await expectTabToBeEnabled(page, TabId.SongTiming);
 
-    // 5. Navigate to Song Timing tab
+    // 6. Navigate to Song Timing tab
     await navigateToTab(page, TabId.SongTiming);
 
-    // 6. Verify Submit tab is initially disabled
+    // 7. Verify Submit tab is initially disabled
     await expectTabToBeDisabled(page, TabId.Submit);
 
-    // 7. Load and enter timings from fixture file
+    // 8. Load and enter timings from fixture file
     await loadAndEnterTimings(page, defaultTestConfig.timingsFile);
 
-    // 8. Verify success message
+    // 9. Verify success message
     await expectSuccessMessage(page, '.song-timing-tab');
 
-    // 9. Verify Submit tab is now enabled
+    // 10. Verify Submit tab is now enabled
     await expectTabToBeEnabled(page, TabId.Submit);
 
-    // 10. Navigate to Submit tab
+    // 11. Get timings and compare with expected
+    const actualTimings = await getCurrentTimings(page);
+
+    // Load the expected timings from the fixture file
+    const expectedTimings: any[] = await loadFixtureJson(defaultTestConfig.timingsFile);
+
+    expectTimingsToMatch(actualTimings, expectedTimings);
+
+    // 12. Navigate to Submit tab
     await navigateToTab(page, TabId.Submit);
 
-    // 11. Click Create Video
+    // 13. Click Create Video
     await page.click('button:has-text("Create Video")');
 
-    // 12. Wait for video download and verify
+    // 14. Wait for video download and verify
     const VIDEO_CREATION_TIMEOUT = 180000; // 3 minutes
     const videoPath = await expectFileDownload(page, VIDEO_CREATION_TIMEOUT);
     console.log('Video download path:', videoPath);
