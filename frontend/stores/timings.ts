@@ -3,6 +3,9 @@ import { defineStore } from 'pinia';
 import { KEY_CODES, LYRIC_MARKERS } from "@/constants";
 import { pullAt } from 'lodash-es';
 import { useLyricsStore } from './lyrics';
+import { useMediaStore } from './media';
+import { useSettingsStore } from './settings';
+import { createAssFile, DEFAULT_KARAOKE_OPTIONS } from "@/lib/timing";
 
 export const useTimingsStore = defineStore('timings', {
   state: () => ({
@@ -51,6 +54,30 @@ export const useTimingsStore = defineStore('timings', {
     areTimingsFinished(state): boolean {
       // Timings are fully finished when we've marked the end of the last segment
       return this.areTimingsUsable && state._timings[this.length - 1][1] === LYRIC_MARKERS.SEGMENT_END;
+    },
+    subtitles(): string {
+      // Return empty string if there are no timings at all
+      if (this.length === 0) {
+        return "";
+      }
+
+      const lyricsStore = useLyricsStore();
+      const mediaStore = useMediaStore();
+      const settingsStore = useSettingsStore();
+
+      try {
+        return createAssFile(
+          lyricsStore.lyricText,
+          this.rawTimings,
+          mediaStore.songDuration,
+          mediaStore.songTitle,
+          mediaStore.songArtist,
+          settingsStore.videoOptions || DEFAULT_KARAOKE_OPTIONS
+        );
+      } catch (e) {
+        console.error("Failed to create subtitles", e);
+        return "";
+      }
     }
   },
 

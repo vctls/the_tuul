@@ -18,11 +18,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import {
-  createAssFile,
-  LyricEvent,
-  DEFAULT_KARAOKE_OPTIONS,
-} from "@/lib/timing";
+import { LyricEvent } from "@/lib/timing";
 import TimingAdjuster from "@/components/TimingAdjuster.vue";
 import SubtitleDisplay from "./SubtitleDisplay.vue";
 import { useMediaStore } from "@/stores/media";
@@ -37,10 +33,12 @@ export default defineComponent({
     const timingsStore = useTimingsStore();
     const lyricsStore = useLyricsStore();
     const { lyricText } = storeToRefs(lyricsStore);
+    const { subtitles } = storeToRefs(timingsStore);
     return {
       mediaStore,
       timingsStore,
       lyricText,
+      subtitles,
     };
   },
   data() {
@@ -59,28 +57,7 @@ export default defineComponent({
     isEnabled(): boolean {
       return this.timingsStore.length > 0;
     },
-    subtitles() {
-      try {
-        if (this.timingsStore.length === 0) {
-          return "";
-        }
-        return createAssFile(
-          this.lyricText,
-          this.timingsStore.rawTimings,
-          this.mediaStore.songDuration,
-          "",
-          "",
-          {
-            ...DEFAULT_KARAOKE_OPTIONS,
-            addTitleScreen: false,
-            addCountIns: false,
-          }
-        );
-      } catch (e) {
-        console.error("Failed to create subtitles", e);
-        return "";
-      }
-    },
+    // subtitles now comes from the timings store
   },
   watch: {
     playhead(newPlayhead: number) {

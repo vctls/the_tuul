@@ -1,11 +1,35 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { useTimingsStore } from './timings';
-import { KEY_CODES, LYRIC_MARKERS } from "../constants";
+import { useLyricsStore } from './lyrics';
+import { useMediaStore } from './media';
+import { useSettingsStore } from './settings';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { KEY_CODES, LYRIC_MARKERS } from '@/constants';
+
+// Mock the createAssFile function
+vi.mock('@/lib/timing', () => ({
+  createAssFile: vi.fn().mockReturnValue('mock subtitles content'),
+  DEFAULT_KARAOKE_OPTIONS: {}
+}));
 
 describe('Timings Store', () => {
   beforeEach(() => {
     // Create a fresh pinia instance for each test
     setActivePinia(createPinia());
+  });
+
+  test('should initialize with empty timings', () => {
+    const timingsStore = useTimingsStore();
+    expect(timingsStore.length).toBe(0);
+    expect(timingsStore.rawTimings).toEqual([]);
+  });
+
+  test('should add timing events', () => {
+    const timingsStore = useTimingsStore();
+    timingsStore.add(0, 32, 1.0); // 32 is SPACEBAR code
+
+    expect(timingsStore.length).toBe(1);
+    expect(timingsStore.rawTimings).toEqual([[1.0, LYRIC_MARKERS.SEGMENT_START]]);
   });
 
   test('conflicts should be resolved', () => {
@@ -94,5 +118,42 @@ describe('Timings Store', () => {
     // Should have removed segment 1 timings
     expect(timings.length).toBe(0);
     expect(timings.last).toStrictEqual(null);
+  });
+
+  test('subtitles should return empty string if timings is empty', () => {
+    const timingsStore = useTimingsStore();
+    expect(timingsStore.subtitles).toBe('');
+  });
+
+  test('subtitles should call createAssFile with correct parameters when timings exist', () => {
+    // Setup the stores
+    const timingsStore = useTimingsStore();
+    const lyricsStore = useLyricsStore();
+    const mediaStore = useMediaStore();
+    const settingsStore = useSettingsStore();
+
+    // Mock the store data
+    lyricsStore.setLyrics('Test lyrics');
+    // @ts-ignore - Mocking private property
+    timingsStore._timings = [[1.0, LYRIC_MARKERS.SEGMENT_START], [2.0, LYRIC_MARKERS.SEGMENT_END]];
+    // @ts-ignore - Mocking private properties
+    mediaStore.songDuration = 10;
+    mediaStore.songTitle = 'Test Song';
+    mediaStore.songArtist = 'Test Artist';
+    settingsStore.videoOptions = { test: 'options' };
+
+    // Check the result
+    expect(timingsStore.subtitles).toBe('mock subtitles content');
+
+    // Verify that createAssFile was called with the correct parameters
+    const { createAssFile } = require('@/lib/timing');
+    expect(createAssFile).toHaveBeenCalledWith(
+      'Test lyrics',
+      timingsStore.rawTimings,
+      10,
+      'Test Song',
+      'Test Artist',
+      { test: 'options' }
+    );
   });
 });
