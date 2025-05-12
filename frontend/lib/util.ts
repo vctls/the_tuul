@@ -30,6 +30,7 @@ export function setupErrorHandling() {
         const stackLines = err.stack?.split('\n') || [];
         const errorLocation = stackLines[1]?.match(/\((.*):(\d+):(\d+)\)/) || [];
         const [, filePath, lineNumber, columnNumber] = errorLocation;
+        originalConsoleError(err);
 
         // Send the error to the server
         fetch("/log_error", {
