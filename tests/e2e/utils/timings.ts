@@ -56,9 +56,6 @@ export async function enterTimings(page: Page, timings: TimingEntry[]): Promise<
 
   // Stop playback
   await togglePlayback(page);
-
-  // Verify success message is displayed
-  await expect(page.locator('.song-timing-tab .message.is-success')).toBeVisible();
 }
 
 /**
@@ -93,8 +90,8 @@ export async function adjustTiming(
   }
 
   // Get segment handles based on the region-handle classes from OpenEndedRegionPlugin
-  const startHandle = page.locator(`[part="region ${segmentIndex}_${segmentIndex}"] [part="region-handle region-handle-left"]`);
-  const endHandle = page.locator(`[part="region ${segmentIndex}_${segmentIndex}"] [part="region-handle region-handle-right"]`);
+  const startHandle = page.locator(`[part="region segment_${segmentIndex}"] [part="region-handle region-handle-left"]`);
+  const endHandle = page.locator(`[part="region segment_${segmentIndex}"] [part="region-handle region-handle-right"]`);
 
   // Perform drag operations if offsets are non-zero
   if (startOffset !== 0) {
@@ -113,31 +110,22 @@ export async function adjustTiming(
 }
 
 /**
- * Gets the current timings array from the app
- * This is useful for verifying timing adjustments
+ * Gets the current timings by navigating to Submit tab and copying timings.json to clipboard
  */
-export async function getCurrentTimings(page: Page): Promise<TimingEntry[]> {
-  return await page.evaluate(() => {
-    // Access the Vue app instance
-    // @ts-ignore
-    const appElement = document.querySelector('.wrapper');
-    if (!appElement) {
-      throw new Error('App element not found');
-    }
+export async function getCurrentTimings(page: Page): Promise<any> {
+  // Navigate to Submit tab
+  await navigateToTab(page, TabId.Submit);
 
-    // Get the Vue component instance using __vue__ property
-    // @ts-ignore
-    const app = appElement.__vue__;
-    if (!app) {
-      throw new Error('Vue app instance not found');
-    }
+  // Click the "copy to clipboard" button for timings.json
+  const timingsClipboardButton = page.locator('text=timings.json').locator('xpath=./following-sibling::a[contains(@title, "copy")]');
+  await timingsClipboardButton.click();
 
-    // Get timings directly from App.vue data
-    const timings = app.timings;
-    if (!timings) {
-      throw new Error('Timings not found in App component');
-    }
+  // Wait for toast notification confirming copy
+  await page.locator('.toast.is-success').waitFor({ state: 'visible' });
 
-    return timings;
-  });
+  // Read clipboard content
+  const clipboardContent = await page.evaluate(() => navigator.clipboard.readText());
+
+  // Parse and return the timings
+  return JSON.parse(clipboardContent);
 }

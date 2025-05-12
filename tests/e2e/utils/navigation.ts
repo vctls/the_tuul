@@ -27,9 +27,9 @@ export async function navigateToTab(page: Page, tabId: TabId): Promise<void> {
     [TabId.SongInfo]: 'Get Your Song Ready',
     [TabId.LyricInput]: 'Song Lyrics',
     [TabId.SongTiming]: 'Song Timing',
-    [TabId.TimingAdjustment]: 'Timing Adjustment',
+    [TabId.TimingAdjustment]: 'Adjust Timings',
     [TabId.VideoPreview]: 'Video Preview',
-    [TabId.Submit]: 'Create Video',
+    [TabId.Submit]: 'More Settings:',
     [TabId.Help]: 'Help'
   };
 

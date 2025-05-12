@@ -25,6 +25,35 @@ export async function uploadAudioFile(page: Page, filename: string, expectArtist
 }
 
 /**
+ * Enters a YouTube URL and clicks the Load button
+ */
+export async function enterYouTubeUrl(page: Page, url: string, expectArtist?: string, expectTitle?: string): Promise<void> {
+  // Enter YouTube URL
+  await page.fill('input[type="text"]', url);
+
+  // Click the Load button
+  await page.click('button:has-text("Load")');
+
+  // Wait for loading to complete - button should no longer be in loading state
+  await page.waitForSelector('button:has-text("Load"):not(.is-loading)');
+
+  // Check for error message
+  const errorMessage = await page.locator('.field.is-danger .message').isVisible();
+  if (errorMessage) {
+    throw new Error('YouTube URL loading failed: ' + await page.locator('.field.is-danger .message').textContent());
+  }
+
+  // If we expect specific metadata, wait for it to be loaded
+  if (expectArtist) {
+    await expect(page.locator('[name="artist"]')).toHaveValue(expectArtist);
+  }
+
+  if (expectTitle) {
+    await expect(page.locator('[name="title"]')).toHaveValue(expectTitle);
+  }
+}
+
+/**
  * Loads lyrics from a fixture file or string and enters them in the lyrics editor
  */
 export async function loadAndEnterLyrics(page: Page, lyricsContentOrFilename: string): Promise<void> {

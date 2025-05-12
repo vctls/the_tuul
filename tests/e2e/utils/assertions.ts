@@ -3,6 +3,7 @@
  */
 import { Page, expect } from '@playwright/test';
 import { TabId, isTabEnabled } from './navigation';
+import { getCurrentTimings } from './timings';
 
 /**
  * Checks if lyrics have been successfully loaded
@@ -86,6 +87,36 @@ export async function expectVideoPreviewToBeLoaded(page: Page): Promise<void> {
 }
 
 /**
+ * Compares the actual timings with expected timings
+ */
+export async function expectTimingsToMatch(
+  actualTimings: any[],
+  expectedTimings: any[],
+  tolerance: number = 0.1
+): Promise<void> {
+  // Check the overall length of the timings array
+  expect(actualTimings.length).toBe(expectedTimings.length);
+
+  // Check each timing entry
+  for (let i = 0; i < actualTimings.length; i++) {
+    const actual = actualTimings[i];
+    const expected = expectedTimings[i];
+
+    // Check the structure of each timing (time and marker)
+    expect(actual.length).toBe(2);
+    expect(expected.length).toBe(2);
+
+    // Check the marker is exactly the same
+    expect(actual[1]).toBe(expected[1]);
+
+    // Check the time is within tolerance
+    const actualTime = actual[0];
+    const expectedTime = expected[0];
+    expect(Math.abs(actualTime - expectedTime)).toBeLessThanOrEqual(tolerance);
+  }
+}
+
+/**
  * Checks that the timing segment at the given index has expected start and end times
  */
 export async function expectSegmentTimingsToBe(
@@ -95,52 +126,31 @@ export async function expectSegmentTimingsToBe(
   expectedEndTime: number,
   tolerance: number = 0.1
 ): Promise<void> {
-  const timingData = await page.evaluate((index) => {
-    // Access the Vue app instance
-    // @ts-ignore
-    const appElement = document.querySelector('.wrapper');
-    if (!appElement) {
-      throw new Error('App element not found');
-    }
+  // Get current timings from clipboard
+  const timings = await getCurrentTimings(page);
 
-    // Get the Vue component instance using __vue__ property
-    // @ts-ignore
-    const app = appElement.__vue__;
-    if (!app) {
-      throw new Error('Vue app instance not found');
-    }
+  // Process the timings to extract segment information
+  const processedTimings = [];
+  let currentSegment = { startTime: 0, endTime: 0 };
 
-    // Get timings directly from App.vue data
-    const timings = app.timings;
-    if (!timings) {
-      throw new Error('Timings not found in App component');
-    }
-
-    // Process the timings to extract segment information
-    const processedTimings = [];
-    let currentSegmentIndex = 0;
-    let currentSegment = { startTime: 0, endTime: 0 };
-
-    for (let i = 0; i < timings.length; i++) {
-      const [time, marker] = timings[i];
-      if (marker === 1) { // Start marker
-        if (i > 0 && currentSegment.startTime > 0) {
-          processedTimings.push(currentSegment);
-          currentSegmentIndex++;
-        }
-        currentSegment = { startTime: time, endTime: 0 };
-      } else if (marker === 2) { // End marker
-        currentSegment.endTime = time;
+  for (let i = 0; i < timings.length; i++) {
+    const [time, marker] = timings[i];
+    if (marker === 1) { // Start marker
+      if (i > 0 && currentSegment.startTime > 0) {
+        processedTimings.push(currentSegment);
       }
+      currentSegment = { startTime: time, endTime: 0 };
+    } else if (marker === 2) { // End marker
+      currentSegment.endTime = time;
     }
+  }
 
-    // Add the last segment if it exists
-    if (currentSegment.startTime > 0) {
-      processedTimings.push(currentSegment);
-    }
+  // Add the last segment if it exists
+  if (currentSegment.startTime > 0) {
+    processedTimings.push(currentSegment);
+  }
 
-    return index < processedTimings.length ? processedTimings[index] : null;
-  }, segmentIndex);
+  const timingData = segmentIndex < processedTimings.length ? processedTimings[segmentIndex] : null;
 
   expect(timingData).not.toBeNull();
   expect(Math.abs(timingData.startTime - expectedStartTime)).toBeLessThanOrEqual(tolerance);
