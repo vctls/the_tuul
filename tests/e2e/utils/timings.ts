@@ -95,16 +95,34 @@ export async function adjustTiming(
 
   // Perform drag operations if offsets are non-zero
   if (startOffset !== 0) {
+    // Get current handle position
+    const startBounds = await startHandle.boundingBox();
+    if (!startBounds) {
+      throw new Error(`Could not get boundingBox for start handle of segment ${segmentIndex}`);
+    }
+
+    // Calculate absolute target position by adding offset to current position
+    const targetX = startBounds.x + startOffset;
+
     await startHandle.dragTo(startHandle, {
       force: true,
-      targetPosition: { x: startOffset, y: 0 }
+      targetPosition: { x: targetX, y: startBounds.y }
     });
   }
 
   if (endOffset !== 0) {
+    // Get current handle position
+    const endBounds = await endHandle.boundingBox();
+    if (!endBounds) {
+      throw new Error(`Could not get boundingBox for end handle of segment ${segmentIndex}`);
+    }
+
+    // Calculate absolute target position by adding offset to current position
+    const targetX = endBounds.x + endOffset;
+
     await endHandle.dragTo(endHandle, {
       force: true,
-      targetPosition: { x: endOffset, y: 0 }
+      targetPosition: { x: targetX, y: endBounds.y }
     });
   }
 }
