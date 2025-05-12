@@ -247,13 +247,7 @@ export default defineComponent({
       this.onChange("separationModel", model);
     },
     onBackingTrackFileChange(file: File | null) {
-      if (!file) {
-        this.onChange("backingTrack", null);
-        return;
-      }
-      // Store the backing track in the media store
       this.mediaStore.setBackingTrack(file);
-      this.onChange("backingTrack", file);
     },
     onChange(optionName: string, newValue: any) {
       this.$emit("options-change", { [optionName]: newValue });
