@@ -96,7 +96,7 @@
 import { sum, map } from "lodash-es";
 import { defineComponent } from "vue";
 import { storeToRefs } from "pinia";
-import { createAssFile, createScreens, VerticalAlignment, KaraokeOptions } from "@/lib/timing";
+import { createScreens, VerticalAlignment, KaraokeOptions } from "@/lib/timing";
 import VideoPreview from "@/components/VideoPreview.vue";
 import SourceFileDownloadLinks from "@/components/SourceFileDownloadLinks.vue";
 import VideoCreationProgressIndicator from "@/components/VideoCreationProgressIndicator.vue";
@@ -139,11 +139,13 @@ export default defineComponent({
     const timingsStore = useTimingsStore();
     const lyricsStore = useLyricsStore();
     const { lyricText } = storeToRefs(lyricsStore);
+    const { subtitles } = storeToRefs(timingsStore);
     return {
       mediaStore,
       settingsStore,
       timingsStore,
       lyricText,
+      subtitles,
     };
   },
   props: {
@@ -195,19 +197,7 @@ export default defineComponent({
     videoBlob() {
       return this.mediaStore.backgroundVideo;
     },
-    subtitles(): string {
-      if (!this.isEnabled) {
-        return "";
-      }
-      return createAssFile(
-        this.lyricText,
-        this.timings,
-        this.mediaStore.songDuration,
-        this.mediaStore.songTitle,
-        this.mediaStore.songArtist,
-        this.videoOptions
-      );
-    },
+    // subtitles now comes from the timings store
     audioDelay(): number {
       if (!this.isEnabled) {
         return 0;
