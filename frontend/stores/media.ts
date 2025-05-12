@@ -35,8 +35,6 @@ export const useMediaStore = defineStore('media', () => {
     const separatedTrack = ref<SeparatedTrack | null>(null);
     const error = ref<string | null>(null);
     const separationStartTime = ref<Date | null>(null);
-    var separationPromise: Promise<SeparatedTrack> = null;
-    var resolveResult: (string) => void = null;
 
     async function startSeparation(inputData: any, modelName: SeparationModel): Promise<SeparatedTrack> {
         if (isProcessing.value) {
@@ -60,10 +58,8 @@ export const useMediaStore = defineStore('media', () => {
     async function setBackingTrack(file: File) {
         if (separatedTrack.value == null) {
             separatedTrack.value = { backing: file, vocals: new Blob() };
-        } else if (resolveResult) {
-            resolveResult(URL.createObjectURL(file));
         } else {
-            console.error("Cannot set backing track: separation started but no resolve function found");
+            separatedTrack.value.backing = file;
         }
     }
 
