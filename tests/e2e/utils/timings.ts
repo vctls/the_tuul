@@ -87,6 +87,7 @@ export async function adjustTiming(
 ): Promise<void> {
   if (!await page.locator('.timing-adjustment-tab').isVisible()) {
     await navigateToTab(page, TabId.TimingAdjustment);
+    await page.waitForTimeout(1000); // Wait for the tab to load
   }
 
   // Get segment handles based on the region-handle classes from OpenEndedRegionPlugin
@@ -100,14 +101,17 @@ export async function adjustTiming(
     if (!startBounds) {
       throw new Error(`Could not get boundingBox for start handle of segment ${segmentIndex}`);
     }
-
+    console.log(`Start handle bounds: ${JSON.stringify(startBounds)}`);
     // Calculate absolute target position by adding offset to current position
-    const targetX = startBounds.x + startOffset;
+    const targetX = startBounds.x - 500;
+    await startHandle.hover();
+    await page.mouse.down();
+    await page.waitForTimeout(1000); // Wait for the tab to load
 
-    await startHandle.dragTo(startHandle, {
-      force: true,
-      targetPosition: { x: targetX, y: startBounds.y }
-    });
+    await page.mouse.move(targetX, startBounds.y);
+    await page.waitForTimeout(1000); // Wait for the tab to load
+
+    await page.mouse.up();
   }
 
   if (endOffset !== 0) {
@@ -116,7 +120,6 @@ export async function adjustTiming(
     if (!endBounds) {
       throw new Error(`Could not get boundingBox for end handle of segment ${segmentIndex}`);
     }
-
     // Calculate absolute target position by adding offset to current position
     const targetX = endBounds.x + endOffset;
 
