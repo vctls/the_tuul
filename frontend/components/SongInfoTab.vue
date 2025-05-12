@@ -1,8 +1,5 @@
 <template>
-  <b-tab-item
-    :class="['help-tab', 'scroll-wrapper']"
-    headerClass="song-info-tab-header"
-  >
+  <b-tab-item :class="['help-tab', 'scroll-wrapper']" headerClass="song-info-tab-header">
     <template #header>
       <b-icon v-if="!isSeparatingTrack" icon="file-audio"></b-icon>
       <b-tooltip v-else label="Separating track" position="is-bottom"><span class="icon is-small loader"></span>
@@ -11,82 +8,43 @@
     </template>
     <div class="container">
       <h2 class="title">Get Your Song Ready</h2>
-      <file-upload
-        name="song-file-upload"
-        label="Upload a file from your computer:"
-        v-model="songFile"
-        @update:modelValue="onSongFileChange"
-      ></file-upload>
-      <b-field
-        label="Or paste a YouTube video URL:"
-        :type="youtubeError ? 'is-danger' : ''"
-      >
+      <file-upload name="song-file-upload" label="Upload a file from your computer:"
+        v-model="mediaStore.songFile"></file-upload>
+      <b-field label="Or paste a YouTube video URL:" :type="youtubeError ? 'is-danger' : ''">
         <template #message>
           <span v-html="youtubeError"></span>
         </template>
-        <b-input type="text" v-model="youtubeUrl" />
-        <b-button
-          label="Load"
-          :type="youtubeUrl ? 'is-primary' : 'is-light'"
-          :disabled="!youtubeUrl"
-          @click="loadYouTubeUrl"
-          :loading="isLoadingYouTube"
-        />
+        <b-input type="text" v-model="mediaStore.youtubeUrl" />
+        <b-button label="Load" :type="mediaStore.youtubeUrl ? 'is-primary' : 'is-light'"
+          :disabled="!mediaStore.youtubeUrl" @click="loadYouTubeUrl" :loading="isLoadingYouTube" />
       </b-field>
       <b-field label="Song Artist">
-        <b-input name="artist" v-model="artist" @input="onTextChange" />
+        <b-input name="artist" v-model="mediaStore.songArtist" @input="onTextChange" />
       </b-field>
       <b-field label="Song Title">
-        <b-input name="title" v-model="title" @input="onTextChange" />
+        <b-input name="title" v-model="mediaStore.songTitle" @input="onTextChange" />
       </b-field>
-      <b-field
-        horizontal
-        label="Include Backing Vocals"
-        class="backing-vocals-toggle"
-      >
-        <b-switch v-model="includeBackingVocals"></b-switch
-      ></b-field>
+      <b-field horizontal label="Include Backing Vocals" class="backing-vocals-toggle">
+        <b-switch v-model="includeBackingVocals"></b-switch></b-field>
     </div>
 
     <b-collapse :open="false">
       <template #trigger="props">
-        <b-button
-          type="is-text"
-          aria-controls="contentIdForA11y4"
-          :aria-expanded="props.open"
-        >
+        <b-button type="is-text" aria-controls="contentIdForA11y4" :aria-expanded="props.open">
           <span>Advanced</span>
           <b-icon :icon="props.open ? 'angle-down' : 'angle-right'"></b-icon>
         </b-button>
       </template>
       <div class="box">
-        <file-upload
-          name="timings-file-upload"
-          :accept="['.json']"
-          label="Timings File"
-          v-model="timingsFile"
-          @update:modelValue="onTimingsFileChange"
-        />
-        <file-upload
-          label="Backing Track"
-          v-model="backingTrackFile"
-          @update:modelValue="onBackingTrackFileChange"
-        />
+        <file-upload name="timings-file-upload" :accept="['.json']" label="Timings File" v-model="timingsFile"
+          @update:modelValue="onTimingsFileChange" />
+        <file-upload label="Backing Track" v-model="backingTrackFile" @update:modelValue="onBackingTrackFileChange" />
       </div>
     </b-collapse>
     <div class="buttons" v-if="!backingTrackFile">
-      <b-tooltip
-        position="is-right"
-        :label="separatingTrackMessage"
-        :always="isSeparatingTrack"
-      >
-        <b-button
-          label="Separate Track"
-          type="is-primary"
-          :disabled="!songFile"
-          :loading="isSeparatingTrack"
-          @click="separateTrack"
-        />
+      <b-tooltip position="is-right" :label="separatingTrackMessage" :always="isSeparatingTrack">
+        <b-button label="Separate Track" type="is-primary" :disabled="!mediaStore.songFile" :loading="isSeparatingTrack"
+          @click="separateTrack" />
       </b-tooltip>
     </div>
   </b-tab-item>
@@ -96,35 +54,30 @@
 import { defineComponent } from "vue";
 import { mapStores } from "pinia";
 import { fetchYouTubeVideo, parseYouTubeTitle } from "@/lib/video";
-import jsmediatags from "@/jsmediatags.min.js";
 
 import {
-  useMusicSeparationStore,
+  useMediaStore,
   BACKING_VOCALS_SEPARATOR_MODEL,
   NO_VOCALS_SEPARATOR_MODEL,
-} from "@/stores/musicSeparation";
+} from "@/stores/media";
+import { useTimingsStore } from "@/stores/timings";
 import FileUpload from "@/components/FileUpload.vue";
 
 export default defineComponent({
   components: {
     FileUpload,
   },
-  props: {
-    modelValue: Object,
-    musicSeparationModel: {
-      type: String,
-      default: BACKING_VOCALS_SEPARATOR_MODEL,
-    },
+  setup() {
+    const mediaStore = useMediaStore();
+    const timingsStore = useTimingsStore();
+    return {
+      mediaStore,
+      timingsStore,
+    };
   },
   data() {
     return {
-      songFile: this.modelValue?.file || null,
-      youtubeUrl: this.modelValue?.youtubeUrl || null,
-      artist: this.modelValue?.artist || null,
-      title: this.modelValue?.title || null,
-      duration: this.modelValue?.duration || null,
       isLoadingYouTube: false,
-      videoBlob: null,
       timingsFile: null,
       backingTrackFile: null,
       youtubeError: null,
@@ -134,15 +87,15 @@ export default defineComponent({
     songInfo() {
       return {
         file: this.songFile,
-        artist: this.artist,
-        title: this.title,
-        duration: this.duration,
+        artist: this.songArtist,
+        title: this.songTitle,
+        duration: this.songDuration,
         youtubeUrl: this.youtubeUrl,
         videoBlob: this.videoBlob,
       };
     },
     isSeparatingTrack() {
-      return this.musicSeparationStore.isProcessing;
+      return this.mediaStore.isProcessing;
     },
     separatingTrackMessage() {
       if (this.isSeparatingTrack) {
@@ -152,87 +105,18 @@ export default defineComponent({
     },
     includeBackingVocals: {
       get() {
-        return this.musicSeparationModel == BACKING_VOCALS_SEPARATOR_MODEL;
+        return this.mediaStore.separationModel == BACKING_VOCALS_SEPARATOR_MODEL;
       },
       set(value) {
-        this.onChange(
-          "musicSeparationModel",
-          value ? BACKING_VOCALS_SEPARATOR_MODEL : NO_VOCALS_SEPARATOR_MODEL
-        );
+        this.separationModel = value
+          ? BACKING_VOCALS_SEPARATOR_MODEL
+          : NO_VOCALS_SEPARATOR_MODEL;
       },
     },
-    ...mapStores(useMusicSeparationStore),
+    ...mapStores(useMediaStore),
   },
   methods: {
-    async songDuration(songFile: File): Promise<number> {
-      return new Promise<number>((resolve, reject) => {
-        const reader = new FileReader();
 
-        reader.onload = async (event) => {
-          try {
-            const audioContext = new AudioContext();
-            const arrayBuffer = event.target.result as ArrayBuffer;
-
-            audioContext.decodeAudioData(
-              arrayBuffer,
-              (audioBuffer) => {
-                const duration = audioBuffer.duration;
-                resolve(duration);
-              },
-              (error) => {
-                console.error("Error decoding audio data:", error);
-                reject(
-                  new Error(
-                    "Failed to decode audio data: " +
-                      (error?.message || "Unknown error")
-                  )
-                );
-              }
-            );
-          } catch (error) {
-            console.error("Audio context error:", error);
-            reject(
-              new Error(
-                "Failed to create or use AudioContext: " +
-                  (error?.message || "Unknown error")
-              )
-            );
-          }
-        };
-
-        reader.onerror = (event) => {
-          console.error("FileReader error:", reader.error);
-          reject(
-            new Error(
-              "Failed to read audio file: " +
-                (reader.error?.message || "Unknown error")
-            )
-          );
-        };
-
-        reader.readAsArrayBuffer(songFile);
-      });
-    },
-    onSongFileChange(file: File | null) {
-      if (!file) {
-        this.songFile = null;
-        this.$emit("update:modelValue", this.songInfo);
-        return;
-      }
-      const self = this;
-      jsmediatags.read(this.songFile, {
-        async onSuccess(tag) {
-          self.artist = tag.tags.artist;
-          self.title = tag.tags.title;
-          self.duration = await self.songDuration(self.songFile);
-          self.$emit("update:modelValue", self.songInfo);
-        },
-        onFailure(error) {
-          console.error(error);
-          self.$emit("update:modelValue", self.songInfo);
-        },
-      });
-    },
     onTextChange(e) {
       this.$emit("update:modelValue", this.songInfo);
     },
@@ -241,50 +125,50 @@ export default defineComponent({
       this.youtubeError = null;
       try {
         const [audioBlob, videoBlob, metadata] = await fetchYouTubeVideo(
-          this.youtubeUrl
+          this.mediaStore.youtubeUrl
         );
-        this.songFile = new File([audioBlob], "audio.mp4", {
+        this.mediaStore.songFile = new File([audioBlob], "audio.mp4", {
           type: "audio/mp4",
         });
         const parsedMetadata = parseYouTubeTitle(metadata);
-        this.artist = parsedMetadata[0];
-        this.title = parsedMetadata[1];
-        this.duration = await this.songDuration(this.songFile);
-        this.videoBlob = videoBlob;
+        this.mediaStore.songArtist = parsedMetadata[0];
+        this.mediaStore.songTitle = parsedMetadata[1];
+
+        // Update the media store
+        this.mediaStore.backgroundVideo = videoBlob;
       } catch (e) {
         console.error(e);
         this.youtubeError = `There was a problem downloading that video: ${e.message}. Please try again or use a service such as <a href="https://v2.youconvert.net/en/">YouConvert</a> to get the audio and add it above.`;
       }
       this.isLoadingYouTube = false;
-      this.$emit("update:modelValue", this.songInfo);
     },
     onTimingsFileChange(file: File | null) {
       if (!file) {
-        this.onChange("timings", []);
+        this.timingsStore.resetTimings([]);
         return;
       }
       const reader = new FileReader();
       reader.onload = (e) => {
-        this.onChange("timings", JSON.parse(e.target.result.toString()));
+        const timings = JSON.parse(e.target.result.toString());
+        this.timingsStore.resetTimings(timings);
       };
       reader.readAsText(file);
     },
     onSeparationModelChange(model) {
-      this.onChange("separationModel", model);
+      this.mediaStore.separationModel = model;
     },
     onBackingTrackFileChange(file: File | null) {
-      if (!file) {
-        this.onChange("backingTrack", null);
-        return;
-      }
-      this.onChange("backingTrack", file);
-    },
-    onChange(optionName: string, newValue: any) {
-      this.$emit("options-change", { [optionName]: newValue });
+      this.mediaStore.setBackingTrack(file);
     },
     async separateTrack() {
-      const model = this.musicSeparationModel;
-      this.musicSeparationStore.startSeparation(this.songFile, model);
+      const model = this.mediaStore.separationModel;
+      this.mediaStore.startSeparation(this.mediaStore.songFile, model);
+
+      // Also store the song file and background video in the media store
+      this.mediaStore.songFile = this.mediaStore.songFile;
+      if (this.videoBlob) {
+        this.mediaStore.backgroundVideo = this.videoBlob;
+      }
     },
   },
 });

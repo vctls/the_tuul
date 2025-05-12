@@ -1,5 +1,5 @@
 <template>
-  <b-tab-item icon="flask" label="Adjust (BETA)" :disabled="!enabled" class="timing-adjustment-tab"
+  <b-tab-item icon="flask" label="Adjust (BETA)" :disabled="!isEnabled" class="timing-adjustment-tab"
     headerClass="timing-adjustment-tab-header">
     <div class="content">
       <p>
@@ -10,35 +10,35 @@
     </div>
     <subtitle-display class="subtitle-display" v-if="songFile && subtitles" ref="subtitleDisplay" :subtitles="subtitles"
       :fonts="{}" />
-    <timing-adjuster v-if="songFile && subtitles" ref="timing-adjuster" :lyrics="lyrics" :timings="modelValue"
-      :audioData="songFile" :vocalTrack="vocalTrack" @timingschange="onTimingsChange" @timeupdate="onPlayheadUpdate"
-      @seeking="onPlayheadUpdate" />
+    <timing-adjuster v-if="songFile && subtitles" ref="timing-adjuster" :lyrics="lyricText"
+      :timings="timingsStore.rawTimings" :audioData="songFile" :vocalTrack="vocalTrack" @timingschange="onTimingsChange"
+      @timeupdate="onPlayheadUpdate" @seeking="onPlayheadUpdate" />
   </b-tab-item>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import {
-  createAssFile,
-  LyricEvent,
-  DEFAULT_KARAOKE_OPTIONS,
-} from "@/lib/timing";
+import { LyricEvent } from "@/lib/timing";
 import TimingAdjuster from "@/components/TimingAdjuster.vue";
 import SubtitleDisplay from "./SubtitleDisplay.vue";
-import { useMusicSeparationStore } from "@/stores/musicSeparation";
+import { useMediaStore } from "@/stores/media";
+import { useTimingsStore } from "@/stores/timings";
+import { useLyricsStore } from "@/stores/lyrics";
+import { storeToRefs } from "pinia";
 
 export default defineComponent({
   components: { TimingAdjuster, SubtitleDisplay },
-  props: {
-    lyrics: String,
-    modelValue: Array<LyricEvent>,
-    songInfo: Object,
-    enabled: { type: Boolean, default: true },
-  },
   setup() {
-    const musicSeparationStore = useMusicSeparationStore();
+    const mediaStore = useMediaStore();
+    const timingsStore = useTimingsStore();
+    const lyricsStore = useLyricsStore();
+    const { lyricText } = storeToRefs(lyricsStore);
+    const { subtitles } = storeToRefs(timingsStore);
     return {
-      musicSeparationStore,
+      mediaStore,
+      timingsStore,
+      lyricText,
+      subtitles,
     };
   },
   data() {
@@ -49,33 +49,15 @@ export default defineComponent({
   },
   computed: {
     songFile(): Blob | null {
-      return this.songInfo.file || null;
+      return this.mediaStore.songFile;
     },
     vocalTrack(): Blob | null {
-      return this.musicSeparationStore.separatedTrack?.vocals || null;
+      return this.mediaStore.separatedTrack?.vocals || null;
     },
-    subtitles() {
-      try {
-        if (!this.modelValue) {
-          return "";
-        }
-        return createAssFile(
-          this.lyrics,
-          this.modelValue,
-          this.songInfo.duration,
-          "",
-          "",
-          {
-            ...DEFAULT_KARAOKE_OPTIONS,
-            addTitleScreen: false,
-            addCountIns: false,
-          }
-        );
-      } catch (e) {
-        console.error("Failed to create subtitles", e);
-        return "";
-      }
+    isEnabled(): boolean {
+      return this.timingsStore.length > 0;
     },
+    // subtitles now comes from the timings store
   },
   watch: {
     playhead(newPlayhead: number) {
@@ -86,7 +68,7 @@ export default defineComponent({
   },
   methods: {
     onTimingsChange(newTimings: Array<LyricEvent>) {
-      this.$emit("update:modelValue", newTimings);
+      this.timingsStore.resetTimings(newTimings);
     },
     onPlayheadUpdate(newPlayhead: number) {
       if (newPlayhead !== this.playhead) {

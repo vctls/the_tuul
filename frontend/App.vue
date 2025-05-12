@@ -8,66 +8,28 @@
         <b-navbar-item>
           <span class="subtitle mb-0">
             &nbsp;(For Making Decent Karaoke Videos From Any Song in About 10
-            Minutes)</span
-          ></b-navbar-item
-        >
+            Minutes)</span></b-navbar-item>
       </template>
       <template #end>
         <b-navbar-item>
           <div class="buttons">
-            <b-button
-              v-if="DONATE_URL"
-              tag="a"
-              :href="DONATE_URL"
-              type="is-text"
-              target="_blank"
-            >
-              <b-icon
-                icon="circle-dollar-to-slot"
-                size="is-large"
-                title="Buy Me A Coffee"
-              >
-              </b-icon
-            ></b-button>
-            <b-button
-              tag="a"
-              href="https://github.com/incidentist/the_tuul"
-              type="is-text"
-            >
+            <b-button v-if="DONATE_URL" tag="a" :href="DONATE_URL" type="is-text" target="_blank">
+              <b-icon icon="circle-dollar-to-slot" size="is-large" title="Buy Me A Coffee">
+              </b-icon></b-button>
+            <b-button tag="a" href="https://github.com/incidentist/the_tuul" type="is-text">
               <b-icon pack="fab" icon="github" size="is-large" title="GitHub">
-              </b-icon
-            ></b-button>
+              </b-icon></b-button>
           </div>
         </b-navbar-item>
       </template>
     </b-navbar>
     <b-tabs expanded :vertical="!isMobile" type="is-boxed" class="main-tabs">
       <help-tab></help-tab>
-      <song-info-tab
-        v-model="songInfo"
-        @options-change="onOptionsChange"
-        :music-separation-model="musicSeparationModel"
-      ></song-info-tab>
-      <lyric-input-tab v-model="lyricText"></lyric-input-tab>
-      <song-timing-tab
-        v-model="timings"
-        @areTimingsFinished="onTimingsFinished"
-        :song-info="songInfo"
-        :lyric-segments="lyricSegments"
-      ></song-timing-tab>
-      <timing-adjustment-tab
-        :lyrics="lyricText"
-        v-model="timings"
-        :songInfo="songInfo"
-        :enabled="timings && timings.length > 0"
-      />
-      <submit-tab
-        :song-info="songInfo"
-        :lyric-text="lyricText"
-        :timings="timings"
-        :music-separation-model="musicSeparationModel"
-        :enabled="isReadyToSubmit"
-      ></submit-tab>
+      <song-info-tab @options-change="onOptionsChange" :music-separation-model="musicSeparationModel"></song-info-tab>
+      <lyric-input-tab></lyric-input-tab>
+      <song-timing-tab></song-timing-tab>
+      <timing-adjustment-tab />
+      <submit-tab :music-separation-model="musicSeparationModel"></submit-tab>
     </b-tabs>
   </div>
 </template>
@@ -84,10 +46,12 @@ import TimingAdjustmentTab from "@/components/TimingAdjustmentTab.vue";
 import SubmitTab from "@/components/SubmitTab.vue";
 import {
   BACKING_VOCALS_SEPARATOR_MODEL,
-  useMusicSeparationStore,
-} from "@/stores/musicSeparation";
+  useMediaStore,
+} from "@/stores/media";
+import { useLyricsStore } from "@/stores/lyrics";
+import { useTimingsStore } from "@/stores/timings";
 // import mountedHarness from "@/mountedHarness";
-import { LyricEvent } from "./lib/timing";
+import { storeToRefs } from "pinia";
 
 export default defineComponent({
   // mixins: [mountedHarness],
@@ -99,100 +63,27 @@ export default defineComponent({
     TimingAdjustmentTab,
     SubmitTab,
   },
-  setup() {
-    const musicSeparationStore = useMusicSeparationStore();
-    return {
-      musicSeparationStore,
-    };
-  },
   data() {
     return {
       DONATE_URL,
-      lyricText: "",
-      // Object containing song info: file, artist, title
-      songInfo: {
-        file: null,
-        artist: null,
-        title: null,
-        duration: null,
-        youtubeUrl: null,
-        videoBlob: null,
-      },
       musicSeparationModel: BACKING_VOCALS_SEPARATOR_MODEL,
-      areTimingsFinished: false,
       isSubmitting: false,
-      // Array of lyric timings
-      timings: null,
     };
   },
 
   computed: {
-    lyricSegments() {
-      return this.parseLyricSegments(this.lyricText);
-    },
-    isReadyToSubmit() {
-      return (
-        this.songInfo &&
-        this.songInfo.file &&
-        this.lyricText.length > 0 &&
-        this.areTimingsFinished
-      );
-    },
     isMobile,
   },
   methods: {
-    onTimingsChange(timings: Array<LyricEvent>) {
-      this.timings = timings;
-    },
-    onTimingsFinished(areTimingsFinished: boolean) {
-      if (typeof areTimingsFinished === "boolean") {
-        this.areTimingsFinished = areTimingsFinished;
-      }
-    },
     onOptionsChange(newOptions) {
       for (const key in newOptions) {
-        if (key == "backingTrack") {
-          this.musicSeparationStore.setBackingTrack(newOptions[key]);
-        } else if (key == "timings") {
-          this.timings = newOptions[key];
-          this.areTimingsFinished = true;
-        } else if (Object.hasOwnProperty.call(newOptions, key)) {
+        if (Object.hasOwnProperty.call(newOptions, key)) {
           const newValue = newOptions[key];
           this[key] = newValue;
         }
       }
     },
-    // Parse marked up lyrics into segments.
-    // Line breaks separate segments.
-    // Double line breaks separate screens.
-    // Underscores separate segments on word boundaries between a line.
-    // Sla/shes separate segments within a word.
-    parseLyricSegments(lyricsText): Array<{ text: string }> {
-      // if (!lyricsText) {
-      //   return [];
-      // }
-      const segments = [];
-      let currentSegment = "";
-      for (let i = 0; i < lyricsText.length; i++) {
-        let finishSegment = false;
-        const char = lyricsText[i];
-        if (["\n", "/", "_"].includes(char) || i == lyricsText.length - 1) {
-          finishSegment = true;
-        }
-        if (char == "\n" && currentSegment == "") {
-          segments[segments.length - 1].text += char;
-          continue;
-        }
-        currentSegment += char;
-        if (finishSegment) {
-          segments.push({
-            text: currentSegment,
-          });
-          currentSegment = "";
-        }
-      }
-      return segments;
-    },
+
   },
 });
 </script>

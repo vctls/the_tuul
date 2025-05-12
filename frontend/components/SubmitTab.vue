@@ -1,113 +1,66 @@
 <template>
-  <b-tab-item
-    label="Submit"
-    icon="blender"
-    class="submit-tab scroll-wrapper"
-    headerClass="submit-tab-header"
-    :disabled="!enabled"
-  >
+  <b-tab-item label="Submit" icon="blender" class="submit-tab scroll-wrapper" headerClass="submit-tab-header"
+    :disabled="!isEnabled">
     <div class="columns is-variable is-5">
       <div class="column settings-column">
         <h3 class="title">More Settings:</h3>
         <b-field horizontal>
           <template #label>
             Add Count-Ins
-            <b-tooltip
-              label="Add count-in dots so you know when to start singing"
-            >
+            <b-tooltip label="Add count-in dots so you know when to start singing">
               <b-icon size="is-small" icon="circle-question"></b-icon>
             </b-tooltip>
           </template>
-          <b-switch expanded v-model="videoOptions.addCountIns"></b-switch
-        ></b-field>
+          <b-switch expanded v-model="videoOptions.addCountIns"></b-switch></b-field>
         <b-field horizontal>
           <template #label>
             Add Instrumental Breaks
             <b-tooltip label="Add screens that count down long instrumentals">
               <b-icon size="is-small" icon="circle-question"></b-icon>
-            </b-tooltip> </template
-          ><b-switch
-            expanded
-            v-model="videoOptions.addInstrumentalScreens"
-          ></b-switch
-        ></b-field>
+            </b-tooltip> </template><b-switch expanded
+            v-model="videoOptions.addInstrumentalScreens"></b-switch></b-field>
         <b-field horizontal>
           <template #label>
             Show Fast Lines Early
             <b-tooltip
-              label="Show the first few lines of a screen early if it starts right after the previous screen ends"
-            >
+              label="Show the first few lines of a screen early if it starts right after the previous screen ends">
               <b-icon size="is-small" icon="circle-question"></b-icon>
-            </b-tooltip> </template
-          ><b-switch
-            expanded
-            v-model="videoOptions.addStaggeredLines"
-          ></b-switch
-        ></b-field>
+            </b-tooltip> </template><b-switch expanded v-model="videoOptions.addStaggeredLines"></b-switch></b-field>
         <b-field v-if="videoBlob" horizontal label="Use Background Video">
-          <b-switch
-            expanded
-            v-model="videoOptions.useBackgroundVideo"
-          ></b-switch
-        ></b-field>
+          <b-switch expanded v-model="videoOptions.useBackgroundVideo"></b-switch></b-field>
         <b-collapse :open="false">
           <template #trigger="props">
             <a aria-controls="contentIdForA11y4" :aria-expanded="props.open">
               Fonts and Colors
-              <b-icon
-                :icon="props.open ? 'angle-down' : 'angle-right'"
-              ></b-icon>
+              <b-icon :icon="props.open ? 'angle-down' : 'angle-right'"></b-icon>
             </a>
           </template>
           <b-field horizontal label="Font">
             <b-select v-model="videoOptions.font.name">
-              <option
-                v-for="(path, name) in fonts"
-                :key="path"
-                :value="name"
-                :selected="name == videoOptions.font.name"
-              >
+              <option v-for="(path, name) in fonts" :key="path" :value="name"
+                :selected="name == videoOptions.font.name">
                 {{ name }}
               </option>
             </b-select>
           </b-field>
-          <b-field horizontal label="Font Size"
-            ><b-numberinput
-              v-model="videoOptions.font.size"
-              controls-position="compact"
-            ></b-numberinput
-          ></b-field>
-          <b-field horizontal label="Background Color"
-            ><b-colorpicker v-model="videoOptions.color.background"
-          /></b-field>
-          <b-field horizontal label="Primary Color"
-            ><b-colorpicker v-model="videoOptions.color.primary"
-          /></b-field>
-          <b-field horizontal label="Secondary Color"
-            ><b-colorpicker v-model="videoOptions.color.secondary"
-          /></b-field>
-          <b-field horizontal label="Lyric Vertical Alignment"
-            ><b-radio-button
-              v-model="videoOptions.verticalAlignment"
-              :native-value="VerticalAlignment.Top"
-              type="is-primary is-light is-outlined"
-            >
+          <b-field horizontal label="Font Size"><b-numberinput v-model="videoOptions.font.size"
+              controls-position="compact"></b-numberinput></b-field>
+          <b-field horizontal label="Background Color"><b-colorpicker
+              v-model="videoOptions.color.background" /></b-field>
+          <b-field horizontal label="Primary Color"><b-colorpicker v-model="videoOptions.color.primary" /></b-field>
+          <b-field horizontal label="Secondary Color"><b-colorpicker v-model="videoOptions.color.secondary" /></b-field>
+          <b-field horizontal label="Lyric Vertical Alignment"><b-radio-button v-model="videoOptions.verticalAlignment"
+              :native-value="VerticalAlignment.Top" type="is-primary is-light is-outlined">
               <span>Top</span>
             </b-radio-button>
 
-            <b-radio-button
-              v-model="videoOptions.verticalAlignment"
-              :native-value="VerticalAlignment.Middle"
-              type="is-primary is-light is-outlined"
-            >
+            <b-radio-button v-model="videoOptions.verticalAlignment" :native-value="VerticalAlignment.Middle"
+              type="is-primary is-light is-outlined">
               <span>Middle</span>
             </b-radio-button>
 
-            <b-radio-button
-              v-model="videoOptions.verticalAlignment"
-              :native-value="VerticalAlignment.Bottom"
-              type="is-primary is-light is-outlined"
-            >
+            <b-radio-button v-model="videoOptions.verticalAlignment" :native-value="VerticalAlignment.Bottom"
+              type="is-primary is-light is-outlined">
               Bottom
             </b-radio-button>
           </b-field>
@@ -115,52 +68,26 @@
       </div>
       <div class="column is-narrow">
         <h3 class="title">Video Preview:</h3>
-        <video-preview
-          v-if="enabled"
-          :song-file="songFile"
-          :subtitles="subtitles"
-          :audio-delay="audioDelay"
-          :fonts="fonts"
-          :background-color="videoOptions.color.background.toString()"
-          :video-blob="videoOptions.useBackgroundVideo ? videoBlob : null"
-        />
+        <video-preview v-if="isEnabled" :song-file="mediaStore.songFile" :subtitles="subtitles"
+          :audio-delay="audioDelay" :fonts="fonts" :background-color="videoOptions.color.background.toString()"
+          :video-blob="videoOptions.useBackgroundVideo ? videoBlob : null" />
       </div>
     </div>
 
     <div class="submit-button-container">
-      <b-message
-        v-model="submitError"
-        type="is-danger"
-        has-icon
-        icon="circle-exclamation"
-      >
+      <b-message v-model="submitError" type="is-danger" has-icon icon="circle-exclamation">
         There was a problem making your video: {{ submitError }}. Try again? Or
         email me?
       </b-message>
-      <video-creation-progress-indicator
-        v-if="isSubmitting"
-        :phase="creationPhase"
-        :progress="videoProgress"
-        :elapsed-time="elapsedSubmissionTime"
-        :song-duration="songInfo.duration"
-      />
+      <video-creation-progress-indicator v-if="isSubmitting" :song-duration="songDuration" :phase="creationPhase"
+        :progress="videoProgress" :elapsed-time="elapsedSubmissionTime" />
       <div class="buttons">
-        <b-button
-          expanded
-          size="is-large"
-          type="is-primary"
-          :loading="isSubmitting"
-          @click="createVideo"
-          :disabled="!enabled && !isSubmitting"
-        >
+        <b-button expanded size="is-large" type="is-primary" :loading="isSubmitting" @click="createVideo"
+          :disabled="!isEnabled && !isSubmitting">
           Create Video
         </b-button>
       </div>
-      <source-file-download-links
-        :lyrics="lyricText"
-        :timings="timings"
-        :subtitles="subtitles"
-      />
+      <source-file-download-links :lyrics="lyricText" :timings="timings" :subtitles="subtitles" />
     </div>
   </b-tab-item>
 </template>
@@ -168,19 +95,22 @@
 <script lang="ts">
 import { sum, map } from "lodash-es";
 import { defineComponent } from "vue";
-import { createAssFile, createScreens, VerticalAlignment } from "@/lib/timing";
+import { storeToRefs } from "pinia";
+import { createScreens, VerticalAlignment, KaraokeOptions } from "@/lib/timing";
 import VideoPreview from "@/components/VideoPreview.vue";
 import SourceFileDownloadLinks from "@/components/SourceFileDownloadLinks.vue";
 import VideoCreationProgressIndicator from "@/components/VideoCreationProgressIndicator.vue";
-import Color from "buefy/src/utils/color";
 import jszip from "jszip";
 import video from "@/lib/video";
 import { CreationPhase } from "@/types";
 import {
-  useMusicSeparationStore,
+  useMediaStore,
   NO_VOCALS_SEPARATOR_MODEL,
   SeparatedTrack,
-} from "@/stores/musicSeparation";
+} from "@/stores/media";
+import { useSettingsStore } from "@/stores/settings";
+import { useTimingsStore } from "@/stores/timings";
+import { useLyricsStore } from "@/stores/lyrics";
 
 const fonts = {
   "Andale Mono": "/static/fonts/AndaleMono.ttf",
@@ -204,22 +134,24 @@ export default defineComponent({
     VideoCreationProgressIndicator,
   },
   setup() {
-    const musicSeparationStore = useMusicSeparationStore();
+    const mediaStore = useMediaStore();
+    const settingsStore = useSettingsStore();
+    const timingsStore = useTimingsStore();
+    const lyricsStore = useLyricsStore();
+    const { lyricText } = storeToRefs(lyricsStore);
+    const { subtitles } = storeToRefs(timingsStore);
     return {
-      musicSeparationStore,
+      mediaStore,
+      settingsStore,
+      timingsStore,
+      lyricText,
+      subtitles,
     };
   },
   props: {
-    songInfo: Object,
-    lyricText: String,
-    timings: Array,
     musicSeparationModel: {
       type: String,
       required: true,
-    },
-    enabled: {
-      type: Boolean,
-      default: false,
     },
   },
   data() {
@@ -230,77 +162,52 @@ export default defineComponent({
       elapsedSubmissionTime: null,
       creationPhase: CreationPhase.NotStarted,
       videoProgress: 0,
-      videoOptions: {
-        addTitleScreen: true,
-        addCountIns: true,
-        addInstrumentalScreens: true,
-        addStaggeredLines: true,
-        useBackgroundVideo: this.songInfo.videoBlob != null,
-        verticalAlignment: VerticalAlignment.Middle,
-        font: {
-          size: 20,
-          name: "Arial Narrow",
-        },
-        color: {
-          background: Color.parse("black"),
-          primary: Color.parse("#FF00FF"),
-          secondary: Color.parse("#00FFFF"),
-        },
-      },
       submitError: null,
     };
   },
   mounted() {
-    Object.assign(this.videoOptions, this.loadSettings());
+    // Initialize useBackgroundVideo based on whether the song has a video
+    if (this.mediaStore.videoBlob != null) {
+      this.videoOptions.useBackgroundVideo = true;
+    }
   },
-  watch: {
-    videoOptions: {
-      handler: function (newOptions) {
-        // Create a clean copy of the options for serialization
-        const optionsCopy = JSON.parse(JSON.stringify({
-          ...newOptions,
-          color: {
-            background: newOptions.color.background.toString(),
-            primary: newOptions.color.primary.toString(),
-            secondary: newOptions.color.secondary.toString()
-          }
-        }));
-        
-        this.saveSettings(optionsCopy);
-      },
-      deep: true,
-    },
-  },
+
   computed: {
-    songFile() {
-      return this.songInfo.file;
-    },
-    videoBlob() {
-      return this.songInfo.videoBlob;
-    },
-    subtitles(): string {
-      if (!this.enabled) {
-        return "";
-      }
-      return createAssFile(
-        this.lyricText,
-        this.timings,
-        this.songFile.duration,
-        this.songInfo.title,
-        this.songInfo.artist,
-        this.videoOptions
+    isEnabled() {
+      return (
+        this.mediaStore.songFile &&
+        this.lyricText.length > 0 &&
+        this.timingsStore.areTimingsFinished
       );
     },
+    videoOptions: {
+      get() {
+        return this.settingsStore.videoOptions;
+      },
+      set(newValue) {
+        this.settingsStore.videoOptions = newValue;
+      }
+    },
+    songFile() {
+      return this.mediaStore.songFile;
+    },
+    songDuration() {
+      return this.mediaStore.songDuration;
+    },
+    videoBlob() {
+      return this.mediaStore.backgroundVideo;
+    },
+    // subtitles now comes from the timings store
     audioDelay(): number {
-      if (!this.enabled) {
+      if (!this.isEnabled) {
         return 0;
       }
       const screens = createScreens(
         this.lyricText,
         this.timings,
-        this.songFile.duration,
-        this.songInfo.title,
-        this.songInfo.artist,
+        this.mediaStore.songDuration,
+        this.mediaStore.songTitle,
+        this.mediaStore.songArtist,
         this.videoOptions
       );
       return sum(map(screens, "audioDelay"));
@@ -309,13 +216,16 @@ export default defineComponent({
       return `${this.videoFileName}.zip`;
     },
     videoFileName(): string {
-      if (this.songInfo.artist && this.songInfo.title) {
-        return `${this.songInfo.artist} - ${this.songInfo.title} [karaoke].mp4`;
+      if (this.mediaStore.songArtist && this.mediaStore.songTitle) {
+        return `${this.mediaStore.songArtist} - ${this.mediaStore.songTitle} [karaoke].mp4`;
       }
       return "karaoke.mp4";
     },
+    timings() {
+      return this.timingsStore.rawTimings;
+    },
     videoDuration(): number {
-      return this.songInfo.duration + this.audioDelay;
+      return this.mediaStore.songDuration + this.audioDelay;
     },
     videoFps(): number {
       return this.videoOptions.useBackgroundVideo ? 30 : 20;
@@ -325,61 +235,19 @@ export default defineComponent({
     },
   },
   methods: {
-    loadSettings(): Object {
-      const optionsStr = localStorage.videoOptions;
-      if (!optionsStr) {
-        return {};
-      }
-      try {
-        const options = JSON.parse(optionsStr);
-        if (
-          options.vocalSeparationModel ==
-          "model_mel_band_roformer_ep_3005_sdr_11.4360.ckpt"
-        ) {
-          options.vocalSeparationModel = NO_VOCALS_SEPARATOR_MODEL;
-        }
-        
-        if (!options.color) {
-          return options;
-        }
-        
-        // Create a new color object structure with proper Color objects
-        const newColors = {
-          background: options.color.background ? Color.parse(options.color.background) : this.videoOptions.color.background,
-          primary: options.color.primary ? Color.parse(options.color.primary) : this.videoOptions.color.primary,
-          secondary: options.color.secondary ? Color.parse(options.color.secondary) : this.videoOptions.color.secondary,
-        };
-        
-        options.color = newColors;
-        
-        return options;
-      } catch (e) {
-        console.error("Error loading settings:", e);
-        return {};
-      }
-    },
-    saveSettings(settings: Object) {
-      try {
-        // Since we're handling color serialization in the watcher,
-        // we can directly stringify the settings here
-        localStorage.videoOptions = JSON.stringify(settings);
-      } catch (e) {
-        console.error("Error saving settings:", e);
-      }
-    },
     async separateTrack(
       songFile: File,
       model: string
     ): Promise<SeparatedTrack> {
       const backingTrackPromise = new Promise<SeparatedTrack>(
         (resolve, reject) => {
-          if (this.musicSeparationStore.separatedTrack) {
-            resolve(this.musicSeparationStore.separatedTrack);
+          if (this.mediaStore.separatedTrack) {
+            resolve(this.mediaStore.separatedTrack);
             return;
           }
-          this.musicSeparationStore.startSeparation(songFile, model);
+          this.mediaStore.startSeparation(songFile, model);
           const stopWatchingBacking = this.$watch(
-            "musicSeparationStore.separatedTrack",
+            "mediaStore.separatedTrack",
             (separatedTrack) => {
               console.log("separatedTrackWatcher", separatedTrack);
               if (separatedTrack) {
@@ -390,7 +258,7 @@ export default defineComponent({
             }
           );
           const stopWatchingError = this.$watch(
-            "musicSeparationStore.error",
+            "mediaStore.error",
             (error) => {
               stopWatchingBacking();
               stopWatchingError();
@@ -409,12 +277,12 @@ export default defineComponent({
         this.creationPhase = CreationPhase.SeparatingVocals;
         this.videoProgress = 0;
         elapsedTimeInterval = setInterval(() => {
-          if (!this.musicSeparationStore.separationStartTime) {
+          if (!this.mediaStore.separationStartTime) {
             return;
           }
           this.elapsedSubmissionTime =
             new Date().getTime() -
-            this.musicSeparationStore.separationStartTime.getTime();
+            this.mediaStore.separationStartTime.getTime();
         }, 1000);
         const separatedTrack = await this.separateTrack(
           this.songFile,
@@ -429,9 +297,9 @@ export default defineComponent({
           this.audioDelay,
           videoOptions,
           {
-            artist: this.songInfo.artist,
-            title: this.songInfo.title,
-            duration: this.songInfo.duration,
+            artist: this.mediaStore.songArtist,
+            title: this.mediaStore.songTitle,
+            duration: this.mediaStore.songDuration,
           },
           fonts,
           (progress) => {
