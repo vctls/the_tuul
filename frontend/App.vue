@@ -25,13 +25,11 @@
     </b-navbar>
     <b-tabs expanded :vertical="!isMobile" type="is-boxed" class="main-tabs">
       <help-tab></help-tab>
-      <song-info-tab v-model="songInfo" @options-change="onOptionsChange"
-        :music-separation-model="musicSeparationModel"></song-info-tab>
+      <song-info-tab @options-change="onOptionsChange" :music-separation-model="musicSeparationModel"></song-info-tab>
       <lyric-input-tab></lyric-input-tab>
-      <song-timing-tab :song-info="songInfo"></song-timing-tab>
-      <timing-adjustment-tab :songInfo="songInfo" />
-      <submit-tab :song-info="songInfo" :music-separation-model="musicSeparationModel"
-        :enabled="isReadyToSubmit"></submit-tab>
+      <song-timing-tab></song-timing-tab>
+      <timing-adjustment-tab />
+      <submit-tab :music-separation-model="musicSeparationModel"></submit-tab>
     </b-tabs>
   </div>
 </template>
@@ -65,43 +63,15 @@ export default defineComponent({
     TimingAdjustmentTab,
     SubmitTab,
   },
-  setup() {
-    const mediaStore = useMediaStore();
-    const timingsStore = useTimingsStore();
-    const lyricsStore = useLyricsStore();
-    const { lyricText } = storeToRefs(lyricsStore);
-
-    return {
-      mediaStore,
-      timingsStore,
-      lyricText,
-    };
-  },
   data() {
     return {
       DONATE_URL,
-      songInfo: {
-        file: null,
-        artist: null,
-        title: null,
-        duration: null,
-        youtubeUrl: null,
-        videoBlob: null,
-      },
       musicSeparationModel: BACKING_VOCALS_SEPARATOR_MODEL,
       isSubmitting: false,
     };
   },
 
   computed: {
-    isReadyToSubmit() {
-      return (
-        this.songInfo &&
-        this.songInfo.file &&
-        this.lyricText.length > 0 &&
-        this.timingsStore.areTimingsFinished
-      );
-    },
     isMobile,
   },
   methods: {

@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, watchEffect } from 'vue';
 
 import { separateTrack, TrackSeparationResult } from '@/lib/audio';
 import { SeparationModel } from '@/types';
+import jsmediatags from "@/jsmediatags.min.js";
+
 
 export interface SeparatedTrack {
     // Blob URL of the separated backing track
@@ -21,8 +23,15 @@ export const useMediaStore = defineStore('media', () => {
     // Background video (if the song is from YouTube)
     const backgroundVideo = ref<Blob | null>(null);
 
+    // Song metadata
+    const songTitle = ref<string | null>(null);
+    const songDuration = ref<number | null>(null);
+    const songArtist = ref<string | null>(null);
+    const youtubeUrl = ref<string | null>(null);
+
     // Track separation state
     const isProcessing = ref(false);
+    const separationModel = ref<SeparationModel>(BACKING_VOCALS_SEPARATOR_MODEL);
     const separatedTrack = ref<SeparatedTrack | null>(null);
     const error = ref<string | null>(null);
     const separationStartTime = ref<Date | null>(null);
@@ -58,13 +67,109 @@ export const useMediaStore = defineStore('media', () => {
         }
     }
 
+    async function duration(songFile: File): Promise<number> {
+        return new Promise<number>((resolve, reject) => {
+            const reader = new FileReader();
+
+            reader.onload = async (event) => {
+                try {
+                    const audioContext = new AudioContext();
+                    const arrayBuffer = event.target.result as ArrayBuffer;
+
+                    audioContext.decodeAudioData(
+                        arrayBuffer,
+                        (audioBuffer) => {
+                            const duration = audioBuffer.duration;
+                            resolve(duration);
+                        },
+                        (error) => {
+                            console.error("Error decoding audio data:", error);
+                            reject(
+                                new Error(
+                                    "Failed to decode audio data: " +
+                                    (error?.message || "Unknown error")
+                                )
+                            );
+                        }
+                    );
+                } catch (error) {
+                    console.error("Audio context error:", error);
+                    reject(
+                        new Error(
+                            "Failed to create or use AudioContext: " +
+                            (error?.message || "Unknown error")
+                        )
+                    );
+                }
+            };
+
+            reader.onerror = (event) => {
+                console.error("FileReader error:", reader.error);
+                reject(
+                    new Error(
+                        "Failed to read audio file: " +
+                        (reader.error?.message || "Unknown error")
+                    )
+                );
+            };
+
+            reader.readAsArrayBuffer(songFile);
+        });
+    };
+
+    async function getMetadata(songFile: File): Promise<{ title: string | null; artist: string | null }> {
+        return new Promise((resolve, reject) => {
+            if (!songFile) {
+                resolve({ title: null, artist: null });
+                return;
+            }
+            jsmediatags.read(songFile, {
+                async onSuccess(tag) {
+                    resolve({ title: tag.tags.title, artist: tag.tags.artist });
+                },
+                onFailure(error) {
+                    console.error(error);
+                    reject(
+                        new Error(
+                            "Failed to read metadata: " +
+                            (error?.message || "Unknown error")
+                        )
+                    );
+                },
+            });
+        });
+    }
+
+    watchEffect(async () => {
+        // Update song metadata when the song file changes
+        if (songFile.value) {
+            const [metadata, durationValue] = await Promise.all([
+                getMetadata(songFile.value),
+                duration(songFile.value)
+            ]);
+            songTitle.value = metadata.title || songTitle.value;
+            songArtist.value = metadata.artist || songArtist.value;
+            songDuration.value = durationValue;
+        } else {
+            songTitle.value = null;
+            songArtist.value = null;
+            songDuration.value = null;
+        }
+    });
+
     return {
         // Media files
         songFile,
         backgroundVideo,
 
+        songTitle,
+        songArtist,
+        songDuration,
+        youtubeUrl,
+
         // Track separation
         isProcessing,
+        separationModel,
         separatedTrack,
         error,
         separationStartTime,

@@ -10,7 +10,7 @@
     </div>
     <subtitle-display class="subtitle-display" v-if="songFile && subtitles" ref="subtitleDisplay" :subtitles="subtitles"
       :fonts="{}" />
-    <timing-adjuster v-if="songFile && subtitles" ref="timing-adjuster" :lyrics="lyrics"
+    <timing-adjuster v-if="songFile && subtitles" ref="timing-adjuster" :lyrics="lyricText"
       :timings="timingsStore.rawTimings" :audioData="songFile" :vocalTrack="vocalTrack" @timingschange="onTimingsChange"
       @timeupdate="onPlayheadUpdate" @seeking="onPlayheadUpdate" />
   </b-tab-item>
@@ -32,9 +32,6 @@ import { storeToRefs } from "pinia";
 
 export default defineComponent({
   components: { TimingAdjuster, SubtitleDisplay },
-  props: {
-    songInfo: Object,
-  },
   setup() {
     const mediaStore = useMediaStore();
     const timingsStore = useTimingsStore();
@@ -54,7 +51,7 @@ export default defineComponent({
   },
   computed: {
     songFile(): Blob | null {
-      return this.songInfo.file || null;
+      return this.mediaStore.songFile;
     },
     vocalTrack(): Blob | null {
       return this.mediaStore.separatedTrack?.vocals || null;
@@ -70,7 +67,7 @@ export default defineComponent({
         return createAssFile(
           this.lyricText,
           this.timingsStore.rawTimings,
-          this.songInfo.duration,
+          this.mediaStore.songDuration,
           "",
           "",
           {

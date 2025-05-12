@@ -71,19 +71,18 @@ import LyricDisplay from "@/components/LyricDisplay.vue";
 import TimingButtons from "@/components/TimingButtons.vue";
 import { useTimingsStore } from "@/stores/timings";
 import { useLyricsStore } from "@/stores/lyrics";
+import { useMediaStore } from "@/stores/media";
 
 interface LyricTimingEvent { }
 
 export default defineComponent({
   components: { LyricDisplay, TimingButtons },
-  props: {
-    songInfo: Object,
-  },
   setup() {
     const timingsStore = useTimingsStore();
     const lyricsStore = useLyricsStore();
+    const mediaStore = useMediaStore();
     const { lyricSegments } = storeToRefs(lyricsStore);
-    return { timingsStore, lyricSegments };
+    return { timingsStore, lyricSegments, mediaStore };
   },
   data() {
     return {
@@ -97,10 +96,7 @@ export default defineComponent({
   computed: {
     isMobile,
     songFile() {
-      if (this.songInfo) {
-        return this.songInfo.file;
-      }
-      return null;
+      return this.mediaStore.songFile;
     },
     audioSource() {
       return this.songFile ? URL.createObjectURL(this.songFile) : null;

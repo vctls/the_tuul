@@ -1,6 +1,6 @@
 <template>
   <b-tab-item label="Submit" icon="blender" class="submit-tab scroll-wrapper" headerClass="submit-tab-header"
-    :disabled="!enabled">
+    :disabled="!isEnabled">
     <div class="columns is-variable is-5">
       <div class="column settings-column">
         <h3 class="title">More Settings:</h3>
@@ -68,8 +68,8 @@
       </div>
       <div class="column is-narrow">
         <h3 class="title">Video Preview:</h3>
-        <video-preview v-if="enabled" :song-file="songFile" :subtitles="subtitles" :audio-delay="audioDelay"
-          :fonts="fonts" :background-color="videoOptions.color.background.toString()"
+        <video-preview v-if="isEnabled" :song-file="mediaStore.songFile" :subtitles="subtitles"
+          :audio-delay="audioDelay" :fonts="fonts" :background-color="videoOptions.color.background.toString()"
           :video-blob="videoOptions.useBackgroundVideo ? videoBlob : null" />
       </div>
     </div>
@@ -79,11 +79,11 @@
         There was a problem making your video: {{ submitError }}. Try again? Or
         email me?
       </b-message>
-      <video-creation-progress-indicator v-if="isSubmitting" :phase="creationPhase" :progress="videoProgress"
-        :elapsed-time="elapsedSubmissionTime" :song-duration="songInfo.duration" />
+      <video-creation-progress-indicator v-if="isSubmitting" :song-duration="songDuration" :phase="creationPhase"
+        :progress="videoProgress" :elapsed-time="elapsedSubmissionTime" />
       <div class="buttons">
         <b-button expanded size="is-large" type="is-primary" :loading="isSubmitting" @click="createVideo"
-          :disabled="!enabled && !isSubmitting">
+          :disabled="!isEnabled && !isSubmitting">
           Create Video
         </b-button>
       </div>
@@ -147,14 +147,9 @@ export default defineComponent({
     };
   },
   props: {
-    songInfo: Object,
     musicSeparationModel: {
       type: String,
       required: true,
-    },
-    enabled: {
-      type: Boolean,
-      default: false,
     },
   },
   data() {
@@ -170,12 +165,19 @@ export default defineComponent({
   },
   mounted() {
     // Initialize useBackgroundVideo based on whether the song has a video
-    if (this.songInfo.videoBlob != null) {
+    if (this.mediaStore.videoBlob != null) {
       this.videoOptions.useBackgroundVideo = true;
     }
   },
 
   computed: {
+    isEnabled() {
+      return (
+        this.mediaStore.songFile &&
+        this.lyricText.length > 0 &&
+        this.timingsStore.areTimingsFinished
+      );
+    },
     videoOptions: {
       get() {
         return this.settingsStore.videoOptions;
@@ -185,34 +187,37 @@ export default defineComponent({
       }
     },
     songFile() {
-      return this.songInfo.file;
+      return this.mediaStore.songFile;
+    },
+    songDuration() {
+      return this.mediaStore.songDuration;
     },
     videoBlob() {
-      return this.songInfo.videoBlob;
+      return this.mediaStore.backgroundVideo;
     },
     subtitles(): string {
-      if (!this.enabled) {
+      if (!this.isEnabled) {
         return "";
       }
       return createAssFile(
         this.lyricText,
         this.timings,
-        this.songFile.duration,
-        this.songInfo.title,
-        this.songInfo.artist,
+        this.mediaStore.songDuration,
+        this.mediaStore.songTitle,
+        this.mediaStore.songArtist,
         this.videoOptions
       );
     },
     audioDelay(): number {
-      if (!this.enabled) {
+      if (!this.isEnabled) {
         return 0;
       }
       const screens = createScreens(
         this.lyricText,
         this.timings,
-        this.songFile.duration,
-        this.songInfo.title,
-        this.songInfo.artist,
+        this.mediaStore.songDuration,
+        this.mediaStore.songTitle,
+        this.mediaStore.songArtist,
         this.videoOptions
       );
       return sum(map(screens, "audioDelay"));
@@ -221,8 +226,8 @@ export default defineComponent({
       return `${this.videoFileName}.zip`;
     },
     videoFileName(): string {
-      if (this.songInfo.artist && this.songInfo.title) {
-        return `${this.songInfo.artist} - ${this.songInfo.title} [karaoke].mp4`;
+      if (this.mediaStore.songArtist && this.mediaStore.songTitle) {
+        return `${this.mediaStore.songArtist} - ${this.mediaStore.songTitle} [karaoke].mp4`;
       }
       return "karaoke.mp4";
     },
@@ -230,7 +235,7 @@ export default defineComponent({
       return this.timingsStore.rawTimings;
     },
     videoDuration(): number {
-      return this.songInfo.duration + this.audioDelay;
+      return this.mediaStore.songDuration + this.audioDelay;
     },
     videoFps(): number {
       return this.videoOptions.useBackgroundVideo ? 30 : 20;
@@ -302,9 +307,9 @@ export default defineComponent({
           this.audioDelay,
           videoOptions,
           {
-            artist: this.songInfo.artist,
-            title: this.songInfo.title,
-            duration: this.songInfo.duration,
+            artist: this.mediaStore.songArtist,
+            title: this.mediaStore.songTitle,
+            duration: this.mediaStore.songDuration,
           },
           fonts,
           (progress) => {
