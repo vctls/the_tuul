@@ -108,6 +108,7 @@ import {
   SeparatedTrack,
 } from "@/stores/musicSeparation";
 import { useSettingsStore, VideoSettings } from "@/stores/settings";
+import { useTimingsStore } from "@/stores/timings";
 
 const fonts = {
   "Andale Mono": "/static/fonts/AndaleMono.ttf",
@@ -133,15 +134,16 @@ export default defineComponent({
   setup() {
     const musicSeparationStore = useMusicSeparationStore();
     const settingsStore = useSettingsStore();
+    const timingsStore = useTimingsStore();
     return {
       musicSeparationStore,
       settingsStore,
+      timingsStore,
     };
   },
   props: {
     songInfo: Object,
     lyricText: String,
-    timings: Array,
     musicSeparationModel: {
       type: String,
       required: true,
@@ -219,6 +221,9 @@ export default defineComponent({
         return `${this.songInfo.artist} - ${this.songInfo.title} [karaoke].mp4`;
       }
       return "karaoke.mp4";
+    },
+    timings() {
+      return this.timingsStore.rawTimings;
     },
     videoDuration(): number {
       return this.songInfo.duration + this.audioDelay;

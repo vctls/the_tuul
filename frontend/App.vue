@@ -28,12 +28,10 @@
       <song-info-tab v-model="songInfo" @options-change="onOptionsChange"
         :music-separation-model="musicSeparationModel"></song-info-tab>
       <lyric-input-tab v-model="lyricText"></lyric-input-tab>
-      <song-timing-tab v-model="timings" @areTimingsFinished="onTimingsFinished" :song-info="songInfo"
-        :lyric-segments="lyricsStore.lyricSegments"></song-timing-tab>
-      <timing-adjustment-tab :lyrics="lyricText" v-model="timings" :songInfo="songInfo"
-        :enabled="timings && timings.length > 0" />
-      <submit-tab :song-info="songInfo" :lyric-text="lyricText" :timings="timings"
-        :music-separation-model="musicSeparationModel" :enabled="isReadyToSubmit"></submit-tab>
+      <song-timing-tab :song-info="songInfo" :lyric-segments="lyricsStore.lyricSegments"></song-timing-tab>
+      <timing-adjustment-tab :lyrics="lyricText" :songInfo="songInfo" />
+      <submit-tab :song-info="songInfo" :lyric-text="lyricText" :music-separation-model="musicSeparationModel"
+        :enabled="isReadyToSubmit"></submit-tab>
     </b-tabs>
   </div>
 </template>
@@ -53,6 +51,7 @@ import {
   useMusicSeparationStore,
 } from "@/stores/musicSeparation";
 import { useLyricsStore } from "@/stores/lyrics";
+import { useTimingsStore } from "@/stores/timings";
 // import mountedHarness from "@/mountedHarness";
 import { LyricEvent } from "./lib/timing";
 import { storeToRefs } from "pinia";
@@ -70,12 +69,14 @@ export default defineComponent({
   setup() {
     const musicSeparationStore = useMusicSeparationStore();
     const lyricsStore = useLyricsStore();
+    const timingsStore = useTimingsStore();
 
     const { lyricText } = storeToRefs(lyricsStore);
 
     return {
       musicSeparationStore,
       lyricsStore,
+      timingsStore,
       lyricText,
     };
   },
@@ -92,10 +93,7 @@ export default defineComponent({
         videoBlob: null,
       },
       musicSeparationModel: BACKING_VOCALS_SEPARATOR_MODEL,
-      areTimingsFinished: false,
       isSubmitting: false,
-      // Array of lyric timings
-      timings: null,
     };
   },
 
@@ -105,27 +103,16 @@ export default defineComponent({
         this.songInfo &&
         this.songInfo.file &&
         this.lyricText.length > 0 &&
-        this.areTimingsFinished
+        this.timingsStore.areTimingsFinished
       );
     },
     isMobile,
   },
   methods: {
-    onTimingsChange(timings: Array<LyricEvent>) {
-      this.timings = timings;
-    },
-    onTimingsFinished(areTimingsFinished: boolean) {
-      if (typeof areTimingsFinished === "boolean") {
-        this.areTimingsFinished = areTimingsFinished;
-      }
-    },
     onOptionsChange(newOptions) {
       for (const key in newOptions) {
         if (key == "backingTrack") {
           this.musicSeparationStore.setBackingTrack(newOptions[key]);
-        } else if (key == "timings") {
-          this.timings = newOptions[key];
-          this.areTimingsFinished = true;
         } else if (Object.hasOwnProperty.call(newOptions, key)) {
           const newValue = newOptions[key];
           this[key] = newValue;

@@ -1,5 +1,5 @@
 <template>
-  <b-tab-item icon="flask" label="Adjust (BETA)" :disabled="!enabled" class="timing-adjustment-tab"
+  <b-tab-item icon="flask" label="Adjust (BETA)" :disabled="!isEnabled" class="timing-adjustment-tab"
     headerClass="timing-adjustment-tab-header">
     <div class="content">
       <p>
@@ -10,9 +10,9 @@
     </div>
     <subtitle-display class="subtitle-display" v-if="songFile && subtitles" ref="subtitleDisplay" :subtitles="subtitles"
       :fonts="{}" />
-    <timing-adjuster v-if="songFile && subtitles" ref="timing-adjuster" :lyrics="lyrics" :timings="modelValue"
-      :audioData="songFile" :vocalTrack="vocalTrack" @timingschange="onTimingsChange" @timeupdate="onPlayheadUpdate"
-      @seeking="onPlayheadUpdate" />
+    <timing-adjuster v-if="songFile && subtitles" ref="timing-adjuster" :lyrics="lyrics"
+      :timings="timingsStore.rawTimings" :audioData="songFile" :vocalTrack="vocalTrack" @timingschange="onTimingsChange"
+      @timeupdate="onPlayheadUpdate" @seeking="onPlayheadUpdate" />
   </b-tab-item>
 </template>
 
@@ -26,19 +26,20 @@ import {
 import TimingAdjuster from "@/components/TimingAdjuster.vue";
 import SubtitleDisplay from "./SubtitleDisplay.vue";
 import { useMusicSeparationStore } from "@/stores/musicSeparation";
+import { useTimingsStore } from "@/stores/timings";
 
 export default defineComponent({
   components: { TimingAdjuster, SubtitleDisplay },
   props: {
     lyrics: String,
-    modelValue: Array<LyricEvent>,
     songInfo: Object,
-    enabled: { type: Boolean, default: true },
   },
   setup() {
     const musicSeparationStore = useMusicSeparationStore();
+    const timingsStore = useTimingsStore();
     return {
       musicSeparationStore,
+      timingsStore,
     };
   },
   data() {
@@ -54,14 +55,17 @@ export default defineComponent({
     vocalTrack(): Blob | null {
       return this.musicSeparationStore.separatedTrack?.vocals || null;
     },
+    isEnabled(): boolean {
+      return this.timingsStore.length > 0;
+    },
     subtitles() {
       try {
-        if (!this.modelValue) {
+        if (this.timingsStore.length === 0) {
           return "";
         }
         return createAssFile(
           this.lyrics,
-          this.modelValue,
+          this.timingsStore.rawTimings,
           this.songInfo.duration,
           "",
           "",
@@ -86,7 +90,7 @@ export default defineComponent({
   },
   methods: {
     onTimingsChange(newTimings: Array<LyricEvent>) {
-      this.$emit("update:modelValue", newTimings);
+      this.timingsStore.resetTimings(newTimings);
     },
     onPlayheadUpdate(newPlayhead: number) {
       if (newPlayhead !== this.playhead) {

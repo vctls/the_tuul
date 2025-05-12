@@ -1,8 +1,5 @@
 <template>
-  <b-tab-item
-    :class="['help-tab', 'scroll-wrapper']"
-    headerClass="song-info-tab-header"
-  >
+  <b-tab-item :class="['help-tab', 'scroll-wrapper']" headerClass="song-info-tab-header">
     <template #header>
       <b-icon v-if="!isSeparatingTrack" icon="file-audio"></b-icon>
       <b-tooltip v-else label="Separating track" position="is-bottom"><span class="icon is-small loader"></span>
@@ -11,27 +8,15 @@
     </template>
     <div class="container">
       <h2 class="title">Get Your Song Ready</h2>
-      <file-upload
-        name="song-file-upload"
-        label="Upload a file from your computer:"
-        v-model="songFile"
-        @update:modelValue="onSongFileChange"
-      ></file-upload>
-      <b-field
-        label="Or paste a YouTube video URL:"
-        :type="youtubeError ? 'is-danger' : ''"
-      >
+      <file-upload name="song-file-upload" label="Upload a file from your computer:" v-model="songFile"
+        @update:modelValue="onSongFileChange"></file-upload>
+      <b-field label="Or paste a YouTube video URL:" :type="youtubeError ? 'is-danger' : ''">
         <template #message>
           <span v-html="youtubeError"></span>
         </template>
         <b-input type="text" v-model="youtubeUrl" />
-        <b-button
-          label="Load"
-          :type="youtubeUrl ? 'is-primary' : 'is-light'"
-          :disabled="!youtubeUrl"
-          @click="loadYouTubeUrl"
-          :loading="isLoadingYouTube"
-        />
+        <b-button label="Load" :type="youtubeUrl ? 'is-primary' : 'is-light'" :disabled="!youtubeUrl"
+          @click="loadYouTubeUrl" :loading="isLoadingYouTube" />
       </b-field>
       <b-field label="Song Artist">
         <b-input name="artist" v-model="artist" @input="onTextChange" />
@@ -39,54 +24,27 @@
       <b-field label="Song Title">
         <b-input name="title" v-model="title" @input="onTextChange" />
       </b-field>
-      <b-field
-        horizontal
-        label="Include Backing Vocals"
-        class="backing-vocals-toggle"
-      >
-        <b-switch v-model="includeBackingVocals"></b-switch
-      ></b-field>
+      <b-field horizontal label="Include Backing Vocals" class="backing-vocals-toggle">
+        <b-switch v-model="includeBackingVocals"></b-switch></b-field>
     </div>
 
     <b-collapse :open="false">
       <template #trigger="props">
-        <b-button
-          type="is-text"
-          aria-controls="contentIdForA11y4"
-          :aria-expanded="props.open"
-        >
+        <b-button type="is-text" aria-controls="contentIdForA11y4" :aria-expanded="props.open">
           <span>Advanced</span>
           <b-icon :icon="props.open ? 'angle-down' : 'angle-right'"></b-icon>
         </b-button>
       </template>
       <div class="box">
-        <file-upload
-          name="timings-file-upload"
-          :accept="['.json']"
-          label="Timings File"
-          v-model="timingsFile"
-          @update:modelValue="onTimingsFileChange"
-        />
-        <file-upload
-          label="Backing Track"
-          v-model="backingTrackFile"
-          @update:modelValue="onBackingTrackFileChange"
-        />
+        <file-upload name="timings-file-upload" :accept="['.json']" label="Timings File" v-model="timingsFile"
+          @update:modelValue="onTimingsFileChange" />
+        <file-upload label="Backing Track" v-model="backingTrackFile" @update:modelValue="onBackingTrackFileChange" />
       </div>
     </b-collapse>
     <div class="buttons" v-if="!backingTrackFile">
-      <b-tooltip
-        position="is-right"
-        :label="separatingTrackMessage"
-        :always="isSeparatingTrack"
-      >
-        <b-button
-          label="Separate Track"
-          type="is-primary"
-          :disabled="!songFile"
-          :loading="isSeparatingTrack"
-          @click="separateTrack"
-        />
+      <b-tooltip position="is-right" :label="separatingTrackMessage" :always="isSeparatingTrack">
+        <b-button label="Separate Track" type="is-primary" :disabled="!songFile" :loading="isSeparatingTrack"
+          @click="separateTrack" />
       </b-tooltip>
     </div>
   </b-tab-item>
@@ -103,11 +61,20 @@ import {
   BACKING_VOCALS_SEPARATOR_MODEL,
   NO_VOCALS_SEPARATOR_MODEL,
 } from "@/stores/musicSeparation";
+import { useTimingsStore } from "@/stores/timings";
 import FileUpload from "@/components/FileUpload.vue";
 
 export default defineComponent({
   components: {
     FileUpload,
+  },
+  setup() {
+    const musicSeparationStore = useMusicSeparationStore();
+    const timingsStore = useTimingsStore();
+    return {
+      musicSeparationStore,
+      timingsStore,
+    };
   },
   props: {
     modelValue: Object,
@@ -184,7 +151,7 @@ export default defineComponent({
                 reject(
                   new Error(
                     "Failed to decode audio data: " +
-                      (error?.message || "Unknown error")
+                    (error?.message || "Unknown error")
                   )
                 );
               }
@@ -194,7 +161,7 @@ export default defineComponent({
             reject(
               new Error(
                 "Failed to create or use AudioContext: " +
-                  (error?.message || "Unknown error")
+                (error?.message || "Unknown error")
               )
             );
           }
@@ -205,7 +172,7 @@ export default defineComponent({
           reject(
             new Error(
               "Failed to read audio file: " +
-                (reader.error?.message || "Unknown error")
+              (reader.error?.message || "Unknown error")
             )
           );
         };
@@ -260,12 +227,13 @@ export default defineComponent({
     },
     onTimingsFileChange(file: File | null) {
       if (!file) {
-        this.onChange("timings", []);
+        this.timingsStore.resetTimings([]);
         return;
       }
       const reader = new FileReader();
       reader.onload = (e) => {
-        this.onChange("timings", JSON.parse(e.target.result.toString()));
+        const timings = JSON.parse(e.target.result.toString());
+        this.timingsStore.resetTimings(timings);
       };
       reader.readAsText(file);
     },

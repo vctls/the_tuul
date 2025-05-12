@@ -68,7 +68,7 @@ import { KEY_CODES, LYRIC_MARKERS } from "@/constants";
 import { isMobile } from "@/lib/device";
 import LyricDisplay from "@/components/LyricDisplay.vue";
 import TimingButtons from "@/components/TimingButtons.vue";
-import TimingsList from "@/lib/TimingsList";
+import { useTimingsStore } from "@/stores/timings";
 
 interface LyricTimingEvent { }
 
@@ -77,10 +77,10 @@ export default defineComponent({
   props: {
     songInfo: Object,
     lyricSegments: Array,
-    modelValue: {
-      type: Array,
-      default: () => []
-    },
+  },
+  setup() {
+    const timingsStore = useTimingsStore();
+    return { timingsStore };
   },
   data() {
     return {
@@ -102,41 +102,16 @@ export default defineComponent({
     audioSource() {
       return this.songFile ? URL.createObjectURL(this.songFile) : null;
     },
-    hasCompletedTimings() {
-      return (
-        this.lyricSegments &&
-        this.lyricSegments.length > 0 &&
-        this.currentSegment >= this.lyricSegments.length
-      );
-    },
-    // TODO: centralize timings into a Pinia store
-    timingsList: {
-      get() {
-        // Convert raw array to TimingsList using the constructor
-        return new TimingsList(this.modelValue || []);
-      },
-      set(newTimingsList) {
-        // Extract raw timings array and emit up to parent
-        this.$emit('update:modelValue', newTimingsList.toArray());
-      }
-    },
-    hasMarkedEndOfLastLine() {
-      return (
-        this.hasCompletedTimings &&
-        this.timingsList.length > 0 &&
-        this.timingsList.last()[1] == LYRIC_MARKERS.SEGMENT_END
-      );
-    },
     warningMessageVisible: {
       get() {
-        return this.hasCompletedTimings && !this.hasMarkedEndOfLastLine;
+        return this.timingsStore.areTimingsUsable && !this.timingsStore.areTimingsFinished;
       },
       set(value) {
       }
     },
     successMessageVisible: {
       get() {
-        return this.hasCompletedTimings && this.hasMarkedEndOfLastLine;
+        return this.timingsStore.areTimingsFinished;
       },
       set(value) {
       }
@@ -183,28 +158,16 @@ export default defineComponent({
     },
     addTimingEvent(keyCode, currentSongTime) {
       if (keyCode == KEY_CODES.ENTER) {
-        // Using a temporary variable to ensure Vue reactivity
-        const newTimingsList = this.timingsList;
-        newTimingsList.add(this.currentSegment - 1, keyCode, currentSongTime);
-        this.timingsList = newTimingsList;
+        this.timingsStore.add(this.currentSegment - 1, keyCode, currentSongTime);
       } else if (keyCode == KEY_CODES.SPACEBAR) {
         this.advanceToNextSegment(keyCode, currentSongTime);
       }
-      // areTimingsFinished is emitted through the update:modelValue event
-      this.$nextTick(() => this.$emit(
-        "areTimingsFinished",
-        this.hasMarkedEndOfLastLine
-      ));
-
     },
     advanceToNextSegment(keyCode, currentSongTime) {
       if (this.currentSegment >= this.lyricSegments.length) {
         return;
       }
-      // Using a temporary variable to ensure Vue reactivity
-      const newTimingsList = this.timingsList;
-      newTimingsList.add(this.currentSegment, keyCode, currentSongTime);
-      this.timingsList = newTimingsList;
+      this.timingsStore.add(this.currentSegment, keyCode, currentSongTime);
       this.currentSegment += 1;
     },
     playPause() {
@@ -229,10 +192,7 @@ export default defineComponent({
         firstSegmentInScreen,
         5
       );
-      // Using a temporary variable to ensure Vue reactivity
-      const newTimingsList = this.timingsList;
-      newTimingsList.setCurrentSegment(firstSegmentInScreen);
-      this.timingsList = newTimingsList;
+      this.timingsStore.setCurrentSegment(firstSegmentInScreen);
       this.currentSegment = firstSegmentInScreen;
     },
     firstSegmentOfScreen(screenNum) {
@@ -251,7 +211,7 @@ export default defineComponent({
       return segmentNum;
     },
     secondsBeforeSegment(segmentNum, seconds) {
-      const segmentStart = this.timingsList.timingForSegmentNum(segmentNum);
+      const segmentStart = this.timingsStore.timingForSegmentNum(segmentNum);
       return Math.max(segmentStart - seconds, 0);
     },
     isSegmentEndOfScreen(segment, segmentIndex) {
