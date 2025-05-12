@@ -8,66 +8,32 @@
         <b-navbar-item>
           <span class="subtitle mb-0">
             &nbsp;(For Making Decent Karaoke Videos From Any Song in About 10
-            Minutes)</span
-          ></b-navbar-item
-        >
+            Minutes)</span></b-navbar-item>
       </template>
       <template #end>
         <b-navbar-item>
           <div class="buttons">
-            <b-button
-              v-if="DONATE_URL"
-              tag="a"
-              :href="DONATE_URL"
-              type="is-text"
-              target="_blank"
-            >
-              <b-icon
-                icon="circle-dollar-to-slot"
-                size="is-large"
-                title="Buy Me A Coffee"
-              >
-              </b-icon
-            ></b-button>
-            <b-button
-              tag="a"
-              href="https://github.com/incidentist/the_tuul"
-              type="is-text"
-            >
+            <b-button v-if="DONATE_URL" tag="a" :href="DONATE_URL" type="is-text" target="_blank">
+              <b-icon icon="circle-dollar-to-slot" size="is-large" title="Buy Me A Coffee">
+              </b-icon></b-button>
+            <b-button tag="a" href="https://github.com/incidentist/the_tuul" type="is-text">
               <b-icon pack="fab" icon="github" size="is-large" title="GitHub">
-              </b-icon
-            ></b-button>
+              </b-icon></b-button>
           </div>
         </b-navbar-item>
       </template>
     </b-navbar>
     <b-tabs expanded :vertical="!isMobile" type="is-boxed" class="main-tabs">
       <help-tab></help-tab>
-      <song-info-tab
-        v-model="songInfo"
-        @options-change="onOptionsChange"
-        :music-separation-model="musicSeparationModel"
-      ></song-info-tab>
+      <song-info-tab v-model="songInfo" @options-change="onOptionsChange"
+        :music-separation-model="musicSeparationModel"></song-info-tab>
       <lyric-input-tab v-model="lyricText"></lyric-input-tab>
-      <song-timing-tab
-        v-model="timings"
-        @areTimingsFinished="onTimingsFinished"
-        :song-info="songInfo"
-        :lyric-segments="lyricSegments"
-      ></song-timing-tab>
-      <timing-adjustment-tab
-        :lyrics="lyricText"
-        v-model="timings"
-        :songInfo="songInfo"
-        :enabled="timings && timings.length > 0"
-      />
-      <submit-tab
-        :song-info="songInfo"
-        :lyric-text="lyricText"
-        :timings="timings"
-        :music-separation-model="musicSeparationModel"
-        :enabled="isReadyToSubmit"
-      ></submit-tab>
+      <song-timing-tab v-model="timings" @areTimingsFinished="onTimingsFinished" :song-info="songInfo"
+        :lyric-segments="lyricsStore.lyricSegments"></song-timing-tab>
+      <timing-adjustment-tab :lyrics="lyricText" v-model="timings" :songInfo="songInfo"
+        :enabled="timings && timings.length > 0" />
+      <submit-tab :song-info="songInfo" :lyric-text="lyricText" :timings="timings"
+        :music-separation-model="musicSeparationModel" :enabled="isReadyToSubmit"></submit-tab>
     </b-tabs>
   </div>
 </template>
@@ -86,8 +52,10 @@ import {
   BACKING_VOCALS_SEPARATOR_MODEL,
   useMusicSeparationStore,
 } from "@/stores/musicSeparation";
+import { useLyricsStore } from "@/stores/lyrics";
 // import mountedHarness from "@/mountedHarness";
 import { LyricEvent } from "./lib/timing";
+import { storeToRefs } from "pinia";
 
 export default defineComponent({
   // mixins: [mountedHarness],
@@ -101,14 +69,19 @@ export default defineComponent({
   },
   setup() {
     const musicSeparationStore = useMusicSeparationStore();
+    const lyricsStore = useLyricsStore();
+
+    const { lyricText } = storeToRefs(lyricsStore);
+
     return {
       musicSeparationStore,
+      lyricsStore,
+      lyricText,
     };
   },
   data() {
     return {
       DONATE_URL,
-      lyricText: "",
       // Object containing song info: file, artist, title
       songInfo: {
         file: null,
@@ -127,9 +100,6 @@ export default defineComponent({
   },
 
   computed: {
-    lyricSegments() {
-      return this.parseLyricSegments(this.lyricText);
-    },
     isReadyToSubmit() {
       return (
         this.songInfo &&
@@ -162,37 +132,7 @@ export default defineComponent({
         }
       }
     },
-    // Parse marked up lyrics into segments.
-    // Line breaks separate segments.
-    // Double line breaks separate screens.
-    // Underscores separate segments on word boundaries between a line.
-    // Sla/shes separate segments within a word.
-    parseLyricSegments(lyricsText): Array<{ text: string }> {
-      // if (!lyricsText) {
-      //   return [];
-      // }
-      const segments = [];
-      let currentSegment = "";
-      for (let i = 0; i < lyricsText.length; i++) {
-        let finishSegment = false;
-        const char = lyricsText[i];
-        if (["\n", "/", "_"].includes(char) || i == lyricsText.length - 1) {
-          finishSegment = true;
-        }
-        if (char == "\n" && currentSegment == "") {
-          segments[segments.length - 1].text += char;
-          continue;
-        }
-        currentSegment += char;
-        if (finishSegment) {
-          segments.push({
-            text: currentSegment,
-          });
-          currentSegment = "";
-        }
-      }
-      return segments;
-    },
+
   },
 });
 </script>
