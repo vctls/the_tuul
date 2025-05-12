@@ -27,19 +27,23 @@ import TimingAdjuster from "@/components/TimingAdjuster.vue";
 import SubtitleDisplay from "./SubtitleDisplay.vue";
 import { useMediaStore } from "@/stores/media";
 import { useTimingsStore } from "@/stores/timings";
+import { useLyricsStore } from "@/stores/lyrics";
+import { storeToRefs } from "pinia";
 
 export default defineComponent({
   components: { TimingAdjuster, SubtitleDisplay },
   props: {
-    lyrics: String,
     songInfo: Object,
   },
   setup() {
     const mediaStore = useMediaStore();
     const timingsStore = useTimingsStore();
+    const lyricsStore = useLyricsStore();
+    const { lyricText } = storeToRefs(lyricsStore);
     return {
       mediaStore,
       timingsStore,
+      lyricText,
     };
   },
   data() {
@@ -64,7 +68,7 @@ export default defineComponent({
           return "";
         }
         return createAssFile(
-          this.lyrics,
+          this.lyricText,
           this.timingsStore.rawTimings,
           this.songInfo.duration,
           "",

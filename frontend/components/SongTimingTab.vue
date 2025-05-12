@@ -64,11 +64,13 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { storeToRefs } from "pinia";
 import { KEY_CODES, LYRIC_MARKERS } from "@/constants";
 import { isMobile } from "@/lib/device";
 import LyricDisplay from "@/components/LyricDisplay.vue";
 import TimingButtons from "@/components/TimingButtons.vue";
 import { useTimingsStore } from "@/stores/timings";
+import { useLyricsStore } from "@/stores/lyrics";
 
 interface LyricTimingEvent { }
 
@@ -76,11 +78,12 @@ export default defineComponent({
   components: { LyricDisplay, TimingButtons },
   props: {
     songInfo: Object,
-    lyricSegments: Array,
   },
   setup() {
     const timingsStore = useTimingsStore();
-    return { timingsStore };
+    const lyricsStore = useLyricsStore();
+    const { lyricSegments } = storeToRefs(lyricsStore);
+    return { timingsStore, lyricSegments };
   },
   data() {
     return {

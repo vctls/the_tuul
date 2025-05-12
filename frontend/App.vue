@@ -27,10 +27,10 @@
       <help-tab></help-tab>
       <song-info-tab v-model="songInfo" @options-change="onOptionsChange"
         :music-separation-model="musicSeparationModel"></song-info-tab>
-      <lyric-input-tab v-model="lyricText"></lyric-input-tab>
-      <song-timing-tab :song-info="songInfo" :lyric-segments="lyricsStore.lyricSegments"></song-timing-tab>
-      <timing-adjustment-tab :lyrics="lyricText" :songInfo="songInfo" />
-      <submit-tab :song-info="songInfo" :lyric-text="lyricText" :music-separation-model="musicSeparationModel"
+      <lyric-input-tab></lyric-input-tab>
+      <song-timing-tab :song-info="songInfo"></song-timing-tab>
+      <timing-adjustment-tab :songInfo="songInfo" />
+      <submit-tab :song-info="songInfo" :music-separation-model="musicSeparationModel"
         :enabled="isReadyToSubmit"></submit-tab>
     </b-tabs>
   </div>
@@ -68,14 +68,12 @@ export default defineComponent({
   },
   setup() {
     const mediaStore = useMediaStore();
-    const lyricsStore = useLyricsStore();
     const timingsStore = useTimingsStore();
-
+    const lyricsStore = useLyricsStore();
     const { lyricText } = storeToRefs(lyricsStore);
 
     return {
       mediaStore,
-      lyricsStore,
       timingsStore,
       lyricText,
     };
