@@ -62,7 +62,7 @@ test.describe('Multi-screen Timing and Adjustment', () => {
 
     // Adjust the timing of the first segment - move start time earlier by 0.5 seconds
     const firstSegmentIndex = 0;
-    const startTimeAdjustment = -50; // Pixel adjustment that would correspond to ~0.5 seconds
+    const startTimeAdjustment = -500; // Pixel adjustment that would correspond to ~0.5 seconds
     await adjustTiming(page, firstSegmentIndex, startTimeAdjustment, 0);
 
     // 4. Navigate back to Timing tab to do timings for second screen

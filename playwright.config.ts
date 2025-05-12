@@ -19,12 +19,11 @@ export default defineConfig({
         baseURL: process.env.BASE_URL || 'http://localhost:8000',
         /* Collect trace when retrying the failed test */
         trace: 'on-first-retry',
-        /* Take screenshots on test failures */
         screenshot: 'only-on-failure',
-        /* Record video on failure */
-        video: 'on-first-retry',
+        video: 'retain-on-failure',
         /* Viewport size optimized for the app */
         viewport: { width: 1280, height: 720 },
+        permissions: ['clipboard-read', 'clipboard-write'],
     },
 
     /* Configure projects for different browsers */

@@ -112,7 +112,7 @@ export async function expectTimingsToMatch(
     // Check the time is within tolerance
     const actualTime = actual[0];
     const expectedTime = expected[0];
-    expect(Math.abs(actualTime - expectedTime)).toBeLessThanOrEqual(tolerance);
+    expect(Math.abs(actualTime - expectedTime), `Actual ${actualTime} - Expected ${expectedTime} is greater than tolerance ${tolerance}`).toBeLessThanOrEqual(tolerance);
   }
 }
 

@@ -117,7 +117,7 @@ export async function getCurrentTimings(page: Page): Promise<any> {
   await navigateToTab(page, TabId.Submit);
 
   // Click the "copy to clipboard" button for timings.json
-  const timingsClipboardButton = page.locator('text=timings.json').locator('xpath=./following-sibling::a[contains(@title, "copy")]');
+  const timingsClipboardButton = page.locator('a[title="copy timings to clipboard"]');
   await timingsClipboardButton.click();
 
   // Wait for toast notification confirming copy
