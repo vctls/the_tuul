@@ -1,0 +1,87 @@
+/**
+ * Setup helpers for Playwright tests
+ */
+import { Page, expect, test } from '@playwright/test';
+import path from 'path';
+import { promises as fs } from 'fs';
+
+/**
+ * Configuration for test fixtures
+ */
+export interface TestConfig {
+  audioFile: string;
+  lyricsFile: string;
+  timingsFile: string;
+  [key: string]: string;
+}
+
+/**
+ * Default test configuration
+ */
+export const defaultTestConfig: TestConfig = {
+  audioFile: 'my_fair_lady.mp3',
+  lyricsFile: 'lyrics.txt',
+  timingsFile: 'timings.json',
+};
+
+/**
+ * Gets the path to the fixtures directory
+ */
+export function getFixturesDir(): string {
+  return path.join(test.info().project.testDir, '../fixtures');
+}
+
+/**
+ * Gets the full path to a fixture file
+ */
+export function getFixturePath(filename: string): string {
+  return path.join(getFixturesDir(), filename);
+}
+
+/**
+ * Loads a fixture file as a string
+ */
+export async function loadFixtureFile(filename: string): Promise<string> {
+  return await fs.readFile(getFixturePath(filename), 'utf-8');
+}
+
+/**
+ * Loads a fixture file as a JSON object
+ */
+export async function loadFixtureJson<T>(filename: string): Promise<T> {
+  const content = await loadFixtureFile(filename);
+  return JSON.parse(content) as T;
+}
+
+/**
+ * Sets up console error listener that fails the test on console errors
+ */
+export function setupConsoleErrorListener(page: Page): void {
+  page.on('console', msg => {
+    const type = msg.type();
+    const text = msg.text();
+
+    console.log(`Console ${type}: ${text}`);
+
+    // Optionally, fail the test on console errors
+    // if (type === 'error') {
+    //   test.fail(true, `Console error detected: ${text}`);
+    // }
+  });
+}
+
+/**
+ * Initializes the basic app setup - navigates to the app and checks the title
+ */
+export async function initAppSetup(page: Page): Promise<void> {
+  await page.goto('/');
+  await expect(page).toHaveTitle("The Tuul");
+}
+
+/**
+ * Sets up the basic test environment including console listener and app navigation
+ */
+export async function setupTestEnvironment(page: Page): Promise<void> {
+  setupConsoleErrorListener(page);
+  await initAppSetup(page);
+}

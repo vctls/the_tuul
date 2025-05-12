@@ -3,7 +3,7 @@
     :disabled="!isEnabled">
     <div class="columns is-variable is-5">
       <div class="column settings-column">
-        <h3 class="title">More Settings:</h3>
+        <h2 class="title">More Settings:</h2>
         <b-field horizontal>
           <template #label>
             Add Count-Ins
