@@ -1,10 +1,5 @@
 <template>
-  <b-tab-item
-    label="Lyrics"
-    icon="align-left"
-    class="lyric-input-tab"
-    headerClass="lyric-input-tab-header"
-  >
+  <b-tab-item label="Lyrics" icon="align-left" class="lyric-input-tab" headerClass="lyric-input-tab-header">
     <h2 class="title">Song Lyrics</h2>
     <div class="content">
       <p>
@@ -14,54 +9,41 @@
         Example:
       </p>
       <p>
-        <code
-          >Hell/o_from_the_oth/er_side<br />I_must_have_called_a_thou/sand_times</code
-        >
+        <code>Hell/o_from_the_oth/er_side<br />I_must_have_called_a_thou/sand_times</code>
       </p>
     </div>
     <div class="level is-mobile">
       <div class="level-item">
-        <b-tooltip
-          position="is-right"
-          label="Convert all spaces to underscores"
-        >
-          <b-button @click="convertSpaces">Add Underscores</b-button></b-tooltip
-        >
+        <b-tooltip position="is-right" label="Convert all spaces to underscores">
+          <b-button @click="convertSpaces">Add Underscores</b-button></b-tooltip>
       </div>
       <div class="level-item">
-        <b-checkbox
-          type="is-primary"
-          v-model="magicSlashes"
-        >
-          <b-tooltip
-            multilined
-            label="Adding a slash to a word will add the same slash to all instances of that word"
-            position="is-right"
-            dashed
-            >Magic Slashes</b-tooltip
-          ></b-checkbox
-        >
+        <b-checkbox type="is-primary" v-model="magicSlashes">
+          <b-tooltip multilined label="Adding a slash to a word will add the same slash to all instances of that word"
+            position="is-right" dashed>Magic Slashes</b-tooltip></b-checkbox>
       </div>
     </div>
-    <lyric-editor
-      ref="lyricEditor"
-      :modelValue="modelValue"
-      :magic-slashes="magicSlashes"
-      @update:modelValue="onLyricInput"
-    ></lyric-editor>
+    <lyric-editor ref="lyricEditor" :modelValue="lyricText" :magic-slashes="magicSlashes"
+      @update:modelValue="onLyricInput"></lyric-editor>
   </b-tab-item>
 </template>
 
 <script>
 import { defineComponent } from "vue";
+import { storeToRefs } from "pinia";
+import { useLyricsStore } from "@/stores/lyrics";
 import LyricEditor from "@/components/LyricEditor.vue";
 
 export default defineComponent({
   components: {
     LyricEditor,
   },
-  props: {
-    modelValue: String,
+  setup() {
+    const lyricStore = useLyricsStore();
+    const { lyricText } = storeToRefs(lyricStore);
+    return {
+      lyricText,
+    };
   },
   data() {
     return {
@@ -70,7 +52,7 @@ export default defineComponent({
   },
   methods: {
     onLyricInput(newValue) {
-      this.$emit("update:modelValue", newValue);
+      this.lyricText = newValue;
     },
     convertSpaces(e) {
       this.$refs.lyricEditor.convertSpaces();

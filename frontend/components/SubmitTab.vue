@@ -95,6 +95,7 @@
 <script lang="ts">
 import { sum, map } from "lodash-es";
 import { defineComponent } from "vue";
+import { storeToRefs } from "pinia";
 import { createAssFile, createScreens, VerticalAlignment, KaraokeOptions } from "@/lib/timing";
 import VideoPreview from "@/components/VideoPreview.vue";
 import SourceFileDownloadLinks from "@/components/SourceFileDownloadLinks.vue";
@@ -107,8 +108,9 @@ import {
   NO_VOCALS_SEPARATOR_MODEL,
   SeparatedTrack,
 } from "@/stores/media";
-import { useSettingsStore, VideoSettings } from "@/stores/settings";
+import { useSettingsStore } from "@/stores/settings";
 import { useTimingsStore } from "@/stores/timings";
+import { useLyricsStore } from "@/stores/lyrics";
 
 const fonts = {
   "Andale Mono": "/static/fonts/AndaleMono.ttf",
@@ -135,15 +137,17 @@ export default defineComponent({
     const mediaStore = useMediaStore();
     const settingsStore = useSettingsStore();
     const timingsStore = useTimingsStore();
+    const lyricsStore = useLyricsStore();
+    const { lyricText } = storeToRefs(lyricsStore);
     return {
       mediaStore,
       settingsStore,
       timingsStore,
+      lyricText,
     };
   },
   props: {
     songInfo: Object,
-    lyricText: String,
     musicSeparationModel: {
       type: String,
       required: true,
