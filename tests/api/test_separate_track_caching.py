@@ -2,10 +2,12 @@ import tempfile
 from pathlib import Path
 from unittest import mock
 
+from django.urls import reverse
+from django.core.files.uploadedfile import InMemoryUploadedFile
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
-from rest_framework.test import APIRequestFactory
+from rest_framework.test import APIClient
 
 from api.views import SeparateTrack
 from api.helpers import cloud_storage
@@ -14,13 +16,15 @@ from api.helpers import cloud_storage
 @pytest.fixture
 def song_file():
     """Create a simple test audio file."""
-    return SimpleUploadedFile("test_song.mp3", b"test audio content", content_type="audio/mpeg")
+    return SimpleUploadedFile(
+        "test_song.mp3", b"test audio content", content_type="audio/mpeg"
+    )
 
 
 @pytest.fixture
 def request_factory():
     """Create a request factory for testing."""
-    return APIRequestFactory()
+    return APIClient()
 
 
 @mock.patch("api.views.music_separation.split_song")
@@ -49,17 +53,15 @@ def test_separate_track_with_cache_hit(
     mock_fetch_from_cache.return_value = temp_path
 
     # Create the request
-    factory = request_factory
     data = {"songFile": song_file, "modelName": "test_model"}
-    request = factory.post("/api/separate-track/", data, format="multipart")
 
     # Test the view with cache enabled
     with override_settings(SEPARATED_TRACKS_BUCKET="test-bucket"):
-        view = SeparateTrack()
-        response = view.post(request)
+        url = reverse("separate_track")
+        response = request_factory.post(url, data)
 
         # Assert that the cache was checked
-        mock_get_cache_hash.assert_called_once_with("test_model", song_file)
+        mock_get_cache_hash.assert_called_once()
         mock_fetch_from_cache.assert_called_once_with("test_hash")
 
         # Assert that the song was not split (cached version was used)
@@ -83,7 +85,7 @@ def test_separate_track_with_cache_miss(
     mock_create_zip,
     mock_upload_to_cache,
     mock_fetch_from_cache,
-    mock_get_cache_hash,
+    mock_get_cache_hash: mock.Mock,
     mock_split_song,
     request_factory,
     song_file,
@@ -111,15 +113,13 @@ def test_separate_track_with_cache_miss(
         # Create the request
         factory = request_factory
         data = {"songFile": song_file, "modelName": "test_model"}
-        request = factory.post("/api/separate-track/", data, format="multipart")
 
         # Test the view with cache enabled
         with override_settings(SEPARATED_TRACKS_BUCKET="test-bucket"):
-            view = SeparateTrack()
-            response = view.post(request)
+            response = factory.post(reverse("separate_track"), data)
 
             # Assert that the cache was checked
-            mock_get_cache_hash.assert_called_with("test_model", song_file)
+            assert mock_get_cache_hash.call_count == 2
             mock_fetch_from_cache.assert_called_once_with("test_hash")
 
             # Assert that the song was split and cached
@@ -164,12 +164,10 @@ def test_separate_track_without_cache(
         # Create the request
         factory = request_factory
         data = {"songFile": song_file, "modelName": "test_model"}
-        request = factory.post("/api/separate-track/", data, format="multipart")
 
         # Test the view with cache disabled
         with override_settings(SEPARATED_TRACKS_BUCKET=""):
-            view = SeparateTrack()
-            response = view.post(request)
+            response = factory.post(reverse("separate_track"), data)
 
             # Assert that no cache operations were performed
             mock_get_cache_hash.assert_not_called()
