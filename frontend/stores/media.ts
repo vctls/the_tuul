@@ -14,7 +14,14 @@ export interface SeparatedTrack {
 export const BACKING_VOCALS_SEPARATOR_MODEL = "UVR_MDXNET_KARA_2.onnx";
 export const NO_VOCALS_SEPARATOR_MODEL = "UVR-MDX-NET-Inst_HQ_3.onnx";
 
-export const useMusicSeparationStore = defineStore('musicSeparation', () => {
+export const useMediaStore = defineStore('media', () => {
+    // The mixed song file (uploaded by user)
+    const songFile = ref<File | null>(null);
+
+    // Background video (if the song is from YouTube)
+    const backgroundVideo = ref<Blob | null>(null);
+
+    // Track separation state
     const isProcessing = ref(false);
     const separatedTrack = ref<SeparatedTrack | null>(null);
     const error = ref<string | null>(null);
@@ -52,12 +59,19 @@ export const useMusicSeparationStore = defineStore('musicSeparation', () => {
     }
 
     return {
+        // Media files
+        songFile,
+        backgroundVideo,
+
+        // Track separation
         isProcessing,
         separatedTrack,
         error,
+        separationStartTime,
+
+        // Methods
         startSeparation,
         setBackingTrack,
-        separationStartTime,
     };
 });
 

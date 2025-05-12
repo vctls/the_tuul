@@ -48,8 +48,8 @@ import TimingAdjustmentTab from "@/components/TimingAdjustmentTab.vue";
 import SubmitTab from "@/components/SubmitTab.vue";
 import {
   BACKING_VOCALS_SEPARATOR_MODEL,
-  useMusicSeparationStore,
-} from "@/stores/musicSeparation";
+  useMediaStore,
+} from "@/stores/media";
 import { useLyricsStore } from "@/stores/lyrics";
 import { useTimingsStore } from "@/stores/timings";
 // import mountedHarness from "@/mountedHarness";
@@ -67,14 +67,14 @@ export default defineComponent({
     SubmitTab,
   },
   setup() {
-    const musicSeparationStore = useMusicSeparationStore();
+    const mediaStore = useMediaStore();
     const lyricsStore = useLyricsStore();
     const timingsStore = useTimingsStore();
 
     const { lyricText } = storeToRefs(lyricsStore);
 
     return {
-      musicSeparationStore,
+      mediaStore,
       lyricsStore,
       timingsStore,
       lyricText,
@@ -112,7 +112,7 @@ export default defineComponent({
     onOptionsChange(newOptions) {
       for (const key in newOptions) {
         if (key == "backingTrack") {
-          this.musicSeparationStore.setBackingTrack(newOptions[key]);
+          this.mediaStore.setBackingTrack(newOptions[key]);
         } else if (Object.hasOwnProperty.call(newOptions, key)) {
           const newValue = newOptions[key];
           this[key] = newValue;

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { reactive, watch } from 'vue';
 import { VerticalAlignment } from '@/lib/timing';
-import { NO_VOCALS_SEPARATOR_MODEL, BACKING_VOCALS_SEPARATOR_MODEL } from './musicSeparation';
+import { NO_VOCALS_SEPARATOR_MODEL, BACKING_VOCALS_SEPARATOR_MODEL } from './media';
 import Color from 'buefy/src/utils/color';
 import { SeparationModel } from '@/types';
 

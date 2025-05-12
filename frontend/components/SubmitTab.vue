@@ -103,10 +103,10 @@ import jszip from "jszip";
 import video from "@/lib/video";
 import { CreationPhase } from "@/types";
 import {
-  useMusicSeparationStore,
+  useMediaStore,
   NO_VOCALS_SEPARATOR_MODEL,
   SeparatedTrack,
-} from "@/stores/musicSeparation";
+} from "@/stores/media";
 import { useSettingsStore, VideoSettings } from "@/stores/settings";
 import { useTimingsStore } from "@/stores/timings";
 
@@ -132,11 +132,11 @@ export default defineComponent({
     VideoCreationProgressIndicator,
   },
   setup() {
-    const musicSeparationStore = useMusicSeparationStore();
+    const mediaStore = useMediaStore();
     const settingsStore = useSettingsStore();
     const timingsStore = useTimingsStore();
     return {
-      musicSeparationStore,
+      mediaStore,
       settingsStore,
       timingsStore,
     };
@@ -242,13 +242,13 @@ export default defineComponent({
     ): Promise<SeparatedTrack> {
       const backingTrackPromise = new Promise<SeparatedTrack>(
         (resolve, reject) => {
-          if (this.musicSeparationStore.separatedTrack) {
-            resolve(this.musicSeparationStore.separatedTrack);
+          if (this.mediaStore.separatedTrack) {
+            resolve(this.mediaStore.separatedTrack);
             return;
           }
-          this.musicSeparationStore.startSeparation(songFile, model);
+          this.mediaStore.startSeparation(songFile, model);
           const stopWatchingBacking = this.$watch(
-            "musicSeparationStore.separatedTrack",
+            "mediaStore.separatedTrack",
             (separatedTrack) => {
               console.log("separatedTrackWatcher", separatedTrack);
               if (separatedTrack) {
@@ -259,7 +259,7 @@ export default defineComponent({
             }
           );
           const stopWatchingError = this.$watch(
-            "musicSeparationStore.error",
+            "mediaStore.error",
             (error) => {
               stopWatchingBacking();
               stopWatchingError();
@@ -278,12 +278,12 @@ export default defineComponent({
         this.creationPhase = CreationPhase.SeparatingVocals;
         this.videoProgress = 0;
         elapsedTimeInterval = setInterval(() => {
-          if (!this.musicSeparationStore.separationStartTime) {
+          if (!this.mediaStore.separationStartTime) {
             return;
           }
           this.elapsedSubmissionTime =
             new Date().getTime() -
-            this.musicSeparationStore.separationStartTime.getTime();
+            this.mediaStore.separationStartTime.getTime();
         }, 1000);
         const separatedTrack = await this.separateTrack(
           this.songFile,

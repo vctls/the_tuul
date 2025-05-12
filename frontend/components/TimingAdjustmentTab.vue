@@ -25,7 +25,7 @@ import {
 } from "@/lib/timing";
 import TimingAdjuster from "@/components/TimingAdjuster.vue";
 import SubtitleDisplay from "./SubtitleDisplay.vue";
-import { useMusicSeparationStore } from "@/stores/musicSeparation";
+import { useMediaStore } from "@/stores/media";
 import { useTimingsStore } from "@/stores/timings";
 
 export default defineComponent({
@@ -35,10 +35,10 @@ export default defineComponent({
     songInfo: Object,
   },
   setup() {
-    const musicSeparationStore = useMusicSeparationStore();
+    const mediaStore = useMediaStore();
     const timingsStore = useTimingsStore();
     return {
-      musicSeparationStore,
+      mediaStore,
       timingsStore,
     };
   },
@@ -53,7 +53,7 @@ export default defineComponent({
       return this.songInfo.file || null;
     },
     vocalTrack(): Blob | null {
-      return this.musicSeparationStore.separatedTrack?.vocals || null;
+      return this.mediaStore.separatedTrack?.vocals || null;
     },
     isEnabled(): boolean {
       return this.timingsStore.length > 0;

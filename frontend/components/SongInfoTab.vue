@@ -57,10 +57,10 @@ import { fetchYouTubeVideo, parseYouTubeTitle } from "@/lib/video";
 import jsmediatags from "@/jsmediatags.min.js";
 
 import {
-  useMusicSeparationStore,
+  useMediaStore,
   BACKING_VOCALS_SEPARATOR_MODEL,
   NO_VOCALS_SEPARATOR_MODEL,
-} from "@/stores/musicSeparation";
+} from "@/stores/media";
 import { useTimingsStore } from "@/stores/timings";
 import FileUpload from "@/components/FileUpload.vue";
 
@@ -69,10 +69,10 @@ export default defineComponent({
     FileUpload,
   },
   setup() {
-    const musicSeparationStore = useMusicSeparationStore();
+    const mediaStore = useMediaStore();
     const timingsStore = useTimingsStore();
     return {
-      musicSeparationStore,
+      mediaStore,
       timingsStore,
     };
   },
@@ -109,7 +109,7 @@ export default defineComponent({
       };
     },
     isSeparatingTrack() {
-      return this.musicSeparationStore.isProcessing;
+      return this.mediaStore.isProcessing;
     },
     separatingTrackMessage() {
       if (this.isSeparatingTrack) {
@@ -128,7 +128,7 @@ export default defineComponent({
         );
       },
     },
-    ...mapStores(useMusicSeparationStore),
+    ...mapStores(useMediaStore),
   },
   methods: {
     async songDuration(songFile: File): Promise<number> {
@@ -183,9 +183,11 @@ export default defineComponent({
     onSongFileChange(file: File | null) {
       if (!file) {
         this.songFile = null;
+        this.mediaStore.songFile = null;
         this.$emit("update:modelValue", this.songInfo);
         return;
       }
+      this.mediaStore.songFile = file;
       const self = this;
       jsmediatags.read(this.songFile, {
         async onSuccess(tag) {
@@ -218,6 +220,10 @@ export default defineComponent({
         this.title = parsedMetadata[1];
         this.duration = await this.songDuration(this.songFile);
         this.videoBlob = videoBlob;
+
+        // Update the media store
+        this.mediaStore.songFile = this.songFile;
+        this.mediaStore.backgroundVideo = videoBlob;
       } catch (e) {
         console.error(e);
         this.youtubeError = `There was a problem downloading that video: ${e.message}. Please try again or use a service such as <a href="https://v2.youconvert.net/en/">YouConvert</a> to get the audio and add it above.`;
@@ -245,6 +251,8 @@ export default defineComponent({
         this.onChange("backingTrack", null);
         return;
       }
+      // Store the backing track in the media store
+      this.mediaStore.setBackingTrack(file);
       this.onChange("backingTrack", file);
     },
     onChange(optionName: string, newValue: any) {
@@ -252,7 +260,13 @@ export default defineComponent({
     },
     async separateTrack() {
       const model = this.musicSeparationModel;
-      this.musicSeparationStore.startSeparation(this.songFile, model);
+      this.mediaStore.startSeparation(this.songFile, model);
+
+      // Also store the song file and background video in the media store
+      this.mediaStore.songFile = this.songFile;
+      if (this.videoBlob) {
+        this.mediaStore.backgroundVideo = this.videoBlob;
+      }
     },
   },
 });
