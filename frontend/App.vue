@@ -53,7 +53,6 @@ import {
 import { useLyricsStore } from "@/stores/lyrics";
 import { useTimingsStore } from "@/stores/timings";
 // import mountedHarness from "@/mountedHarness";
-import { LyricEvent } from "./lib/timing";
 import { storeToRefs } from "pinia";
 
 export default defineComponent({
@@ -81,7 +80,6 @@ export default defineComponent({
   data() {
     return {
       DONATE_URL,
-      // Object containing song info: file, artist, title
       songInfo: {
         file: null,
         artist: null,
@@ -109,9 +107,7 @@ export default defineComponent({
   methods: {
     onOptionsChange(newOptions) {
       for (const key in newOptions) {
-        if (key == "backingTrack") {
-          this.mediaStore.setBackingTrack(newOptions[key]);
-        } else if (Object.hasOwnProperty.call(newOptions, key)) {
+        if (Object.hasOwnProperty.call(newOptions, key)) {
           const newValue = newOptions[key];
           this[key] = newValue;
         }
