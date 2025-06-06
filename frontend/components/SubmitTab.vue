@@ -68,7 +68,7 @@
       </div>
       <div class="column is-narrow">
         <h3 class="title">Video Preview:</h3>
-        <video-preview v-if="isEnabled" :song-file="mediaStore.songFile" :subtitles="subtitles"
+        <video-preview v-if="isEnabled" :song-file="mediaStore.songFile" :subtitles="subtitles()"
           :audio-delay="audioDelay" :fonts="fonts" :background-color="videoOptions.color.background.toString()"
           :video-blob="videoOptions.useBackgroundVideo ? videoBlob : null" />
       </div>
@@ -87,7 +87,7 @@
           Create Video
         </b-button>
       </div>
-      <source-file-download-links :lyrics="lyricText" :timings="timings" :subtitles="subtitles" />
+      <source-file-download-links :lyrics="lyricText" :timings="timings" :subtitles="subtitles()" />
     </div>
   </b-tab-item>
 </template>
@@ -293,7 +293,7 @@ export default defineComponent({
         const videoFile: Uint8Array = await video.createVideo(
           separatedTrack.backing,
           videoOptions.useBackgroundVideo ? this.videoBlob : null,
-          this.subtitles,
+          this.subtitles(),
           this.audioDelay,
           videoOptions,
           {
@@ -330,7 +330,7 @@ export default defineComponent({
     async zipAndSendFiles(videoBlob: Uint8Array) {
       var zip = new jszip();
       zip.file(this.videoFileName, videoBlob);
-      zip.file("subtitles.ass", this.subtitles);
+      zip.file("subtitles.ass", this.subtitles());
       zip.file("lyrics.txt", this.lyricText);
       zip.file("timings.json", JSON.stringify(this.timings));
 

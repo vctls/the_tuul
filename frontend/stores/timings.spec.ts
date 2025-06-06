@@ -122,7 +122,7 @@ describe('Timings Store', () => {
 
   test('subtitles should return empty string if timings is empty', () => {
     const timingsStore = useTimingsStore();
-    expect(timingsStore.subtitles).toBe('');
+    expect(timingsStore.subtitles()).toBe('');
   });
 
   test('subtitles should call createAssFile with correct parameters when timings exist', () => {
@@ -143,7 +143,7 @@ describe('Timings Store', () => {
     settingsStore.videoOptions = { test: 'options' };
 
     // Check the result
-    expect(timingsStore.subtitles).toBe('mock subtitles content');
+    expect(timingsStore.subtitles()).toBe('mock subtitles content');
 
     // Verify that createAssFile was called with the correct parameters
     const { createAssFile } = require('@/lib/timing');

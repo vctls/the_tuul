@@ -9,9 +9,9 @@
         you can also adjust the end of it.
       </p>
     </div>
-    <subtitle-display class="subtitle-display" v-if="songFile && subtitles" ref="subtitleDisplay" :subtitles="subtitles"
+    <subtitle-display class="subtitle-display" v-if="songFile && subtitles(false)" ref="subtitleDisplay" :subtitles="subtitles(false)"
       :fonts="{}" />
-    <timing-adjuster v-if="songFile && subtitles" ref="timing-adjuster" :lyrics="lyricText"
+    <timing-adjuster v-if="songFile && subtitles(false)" ref="timing-adjuster" :lyrics="lyricText"
       :timings="timingsStore.rawTimings" :audioData="songFile" :vocalTrack="vocalTrack" @timingschange="onTimingsChange"
       @timeupdate="onPlayheadUpdate" @seeking="onPlayheadUpdate" />
   </b-tab-item>
