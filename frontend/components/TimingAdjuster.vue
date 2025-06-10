@@ -154,7 +154,7 @@ export default defineComponent({
       this.$refs.wavesurfer.setTime(playhead);
     },
     setAudioPlayhead(playhead: number) {
-      this.$refs.audioPlayer.setCurrentTime(playhead);
+      this.$refs.audioPlayer.currentTime = playhead;
     },
     onAudioTimeUpdate(event: Event) {
       const time = (event.target as HTMLAudioElement).currentTime;
