@@ -10,7 +10,7 @@
       </p>
     </div>
     <subtitle-display class="subtitle-display" v-if="songFile && subtitles(false)" ref="subtitleDisplay" :subtitles="subtitles(false)"
-      :fonts="{}" />
+      :fonts="{}" :backgroundColor="settingsStore.videoOptions.color.background.toString()" />
     <timing-adjuster v-if="songFile && subtitles(false)" ref="timing-adjuster" :lyrics="lyricText"
       :timings="timingsStore.rawTimings" :audioData="songFile" :vocalTrack="vocalTrack" @timingschange="onTimingsChange"
       @timeupdate="onPlayheadUpdate" @seeking="onPlayheadUpdate" />
@@ -25,6 +25,7 @@ import SubtitleDisplay from "./SubtitleDisplay.vue";
 import { useMediaStore } from "@/stores/media";
 import { useTimingsStore } from "@/stores/timings";
 import { useLyricsStore } from "@/stores/lyrics";
+import { useSettingsStore } from "@/stores/settings";
 import { storeToRefs } from "pinia";
 
 export default defineComponent({
@@ -33,11 +34,13 @@ export default defineComponent({
     const mediaStore = useMediaStore();
     const timingsStore = useTimingsStore();
     const lyricsStore = useLyricsStore();
+    const settingsStore = useSettingsStore();
     const { lyricText } = storeToRefs(lyricsStore);
     const { subtitles } = storeToRefs(timingsStore);
     return {
       mediaStore,
       timingsStore,
+      settingsStore,
       lyricText,
       subtitles,
     };
