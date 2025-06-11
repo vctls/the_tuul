@@ -3,8 +3,7 @@
     <smooth-audio-player ref="audioPlayer" controls :src="audioSource" @timeupdate="onAudioTimeUpdate"
       @seeking="onAudioSeeking" @play="onAudioPlay" @pause="onAudioPause" @error="onAudioError" />
     <wavesurfer ref="wavesurfer" :audioData="vocalTrack || audioData" :regions="regions" :mediaControls="false"
-      :showWaveform="true || Boolean(vocalTrack)" @region-updated="onRegionUpdated" @timeupdate="onWavesurferTimeUpdate"
-      @click="onWavesurferSeeking" />
+      :showWaveform="true || Boolean(vocalTrack)" @region-updated="onRegionUpdated" @seeking="onWavesurferSeeking" />
   </div>
 </template>
 
@@ -165,11 +164,6 @@ export default defineComponent({
       const time = (event.target as HTMLAudioElement).currentTime;
       this.setAdjusterPlayhead(time);
       this.$emit("seeking", time);
-    },
-    onWavesurferTimeUpdate(time: number) {
-      // if (Math.abs(this.$refs.audioPlayer.currentTime - time) > 0.1) {
-      //   this.setPlayhead(time);
-      // }
     },
     onWavesurferSeeking(time: number) {
       console.log("Wavesurfer seeking", time);
