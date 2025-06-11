@@ -9,9 +9,9 @@
         you can also adjust the end of it.
       </p>
     </div>
-    <subtitle-display class="subtitle-display" v-if="songFile && subtitles(false)" ref="subtitleDisplay" :subtitles="subtitles(false)"
+    <subtitle-display class="subtitle-display" v-if="songFile && adjustmentSubtitles" ref="subtitleDisplay" :subtitles="adjustmentSubtitles"
       :fonts="{}" :backgroundColor="settingsStore.videoOptions.color.background.toString()" />
-    <timing-adjuster v-if="songFile && subtitles(false)" ref="timing-adjuster" :lyrics="lyricText"
+    <timing-adjuster v-if="songFile && adjustmentSubtitles" ref="timing-adjuster" :lyrics="lyricText"
       :timings="timingsStore.rawTimings" :audioData="songFile" :vocalTrack="vocalTrack" @timingschange="onTimingsChange"
       @timeupdate="onPlayheadUpdate" @seeking="onPlayheadUpdate" />
   </b-tab-item>
@@ -61,7 +61,9 @@ export default defineComponent({
     isEnabled(): boolean {
       return this.timingsStore.length > 0;
     },
-    // subtitles now comes from the timings store
+    adjustmentSubtitles(): string {
+      return this.subtitles({ addTitleScreen: false, addCountIns: false });
+    },
   },
   watch: {
     playhead(newPlayhead: number) {
