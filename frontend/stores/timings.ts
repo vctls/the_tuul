@@ -6,6 +6,7 @@ import { useLyricsStore } from './lyrics';
 import { useMediaStore } from './media';
 import { useSettingsStore } from './settings';
 import { createAssFile, DEFAULT_KARAOKE_OPTIONS } from "@/lib/timing";
+import { VideoSettings } from './settings';
 
 export const useTimingsStore = defineStore('timings', {
   state: () => ({
@@ -56,7 +57,7 @@ export const useTimingsStore = defineStore('timings', {
       return this.areTimingsUsable && state._timings[this.length - 1][1] === LYRIC_MARKERS.SEGMENT_END;
     },
     subtitles() {
-      return (includeTitleScreen: boolean = true): string => {
+      return (options: Partial<VideoSettings> = {}): string => {
         // Return empty string if there are no timings at all
         if (this.length === 0) {
           return "";
@@ -68,9 +69,10 @@ export const useTimingsStore = defineStore('timings', {
 
         try {
           const videoOptions = settingsStore.videoOptions || DEFAULT_KARAOKE_OPTIONS;
+          
           const adjustedOptions = {
             ...videoOptions,
-            addTitleScreen: includeTitleScreen && videoOptions.addTitleScreen
+            ...options
           };
           
           return createAssFile(
