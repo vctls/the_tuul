@@ -95,17 +95,9 @@ export default defineComponent({
     });
     this.wavesurfer.loadBlob(this.audioData);
 
-    this.wavesurfer.on("seeking", (time: number) => {
-      this.$emit("seeking", time);
-    });
-
     this.wavesurfer.on("click", (x: number, y: number) => {
-      const newX = x * this.wavesurfer.getDuration();
-      this.$emit("click", newX, y);
-    });
-
-    this.wavesurfer.on("timeupdate", (time: number) => {
-      this.$emit("timeupdate", time);
+      const time = x * this.wavesurfer.getDuration();
+      this.$emit("seeking", time);
     });
 
     this.wavesurfer.on("error", (err: Error) => {
@@ -116,13 +108,6 @@ export default defineComponent({
       this.$emit("region-updated", region);
     });
 
-    // // Add regions after audio is decoded or they won't render right
-    // this.wavesurfer.on("decode", () => {
-    //   for (const region of this.regions) {
-    //     console.log(region);
-    //     this.regionsPlugin.addRegion(region);
-    //   }
-    // });
   },
   watch: {
     audioData(newAudioData: Blob) {
