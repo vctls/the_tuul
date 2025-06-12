@@ -183,6 +183,10 @@ export class LyricSegment {
     this.endTimestamp = endTimestamp;
   }
 
+  toString(): string {
+    return this.text;
+  }
+
   adjustTimestamps(adjustment: number): LyricSegment {
     const newTs = this.timestamp + adjustment;
     const newEndTs = this.endTimestamp === null ? null : this.endTimestamp + adjustment;
@@ -297,6 +301,10 @@ export class LyricsLine {
     this.segments = segments;
   }
 
+  toString(): string {
+    return `LyricsLine(${this.segments.map(s => s.toString()).join(" ")})`;
+  }
+
   get timestamp(): Timestamp {
     if (this.segments.length == 0) {
       return 0.0;
@@ -348,7 +356,7 @@ export class LyricsLine {
 
   toAssEvent(screenStart: Timestamp, screenEnd: Timestamp, style: string, topMargin: number): string {
     if (isNaN(this.timestamp) || isNaN(screenStart) || isNaN(screenEnd)) {
-      console.error("NaN value for line", this, screenStart, screenEnd);
+      console.error("NaN value for line", this.toString(), screenStart, screenEnd);
       throw Error("NaN value for timestamp");
     }
     const displayStart = this.customDisplayStartTime || screenStart;

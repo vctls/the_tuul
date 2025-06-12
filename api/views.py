@@ -59,7 +59,9 @@ class SeparateTrack(APIView):
             # Try to fetch from cache
             cached_zip_path = cloud_storage.fetch_from_cache(cache_hash)
             if cached_zip_path:
-                logger.info("serving_from_cache", cache_hash=cache_hash, path=cached_zip_path)
+                logger.info(
+                    "serving_from_cache", cache_hash=cache_hash, path=cached_zip_path
+                )
                 return streamed_response(cached_zip_path)
 
         # If no cache hit or caching is disabled, proceed with normal track separation
@@ -133,5 +135,8 @@ class LogError(APIView):
 
     def post(self, request: Request, format=None) -> Response:
         error_data = request.data
-        logger.error("Client error", extra=error_data)
+        logger.error(
+            f"Client error: {error_data.get('message', '<no message>')}",
+            extra=error_data,
+        )
         return Response({"success": True}, status=status.HTTP_200_OK)
