@@ -67,6 +67,10 @@
         </li>
       </ul>
       <h3>What's New</h3>
+      <h5>0.15 - June 14, 2025</h5>
+      <ul>
+        <li>Lots of under-the-hood changes and bugfixes.</li>
+      </ul>
       <h5>0.13 - April 24, 2025</h5>
       <ul>
         <li>Initial beta of new timing-adjustment interface!</li>
@@ -111,26 +115,6 @@
           is created, the actual video creation process is done on your computer
           instead of in the cloud. This is going to allow for some cool stuff in
           the future.
-        </li>
-      </ul>
-      <h5>0.8.1 - February 4, 2024</h5>
-      <ul>
-        <li>
-          <strong>Early Lyric Display</strong> - When the first line on a screen
-          comes right after the last line on the previous screen, the line will
-          appear early.
-        </li>
-        <li>
-          <strong>Subtitle Compatibility</strong> - Subtitles can now be opened
-          in Aegisub and other subtitle editors.
-        </li>
-      </ul>
-      <h5>December 29, 2023</h5>
-      <ul>
-        <li>
-          <strong>Early Lyric Display</strong> - When the first line on a screen
-          comes right after the last line on the previous screen, the line will
-          appear early.
         </li>
       </ul>
     </div>
