@@ -1,8 +1,6 @@
 import json
 import tempfile
 from pathlib import Path
-import zipfile
-import os
 
 import structlog
 
@@ -45,6 +43,10 @@ class SeparateTrack(APIView):
         """Return a zip containing vocal and accompaniment splits of songFile"""
         song_file = request.data.get("songFile")
         model_name = request.data.get("modelName")
+        
+        if not song_file or not model_name:
+            return Response({"error": "songFile and modelName are required"}, status=400)
+        
         logger.info(
             "separate_tracks",
             song_size=len(song_file),
@@ -54,17 +56,35 @@ class SeparateTrack(APIView):
         # Check if we can fetch from cache
         if settings.SEPARATED_TRACKS_BUCKET:
             cache_hash = cloud_storage.get_cache_hash(model_name, song_file)
-            logger.info("checking_cache", cache_hash=cache_hash)
+            blob_name = f"separated_tracks/{cache_hash}.zip"
+            logger.info("checking_cache", cache_hash=cache_hash, blob_name=blob_name)
 
             # Try to fetch from cache
-            cached_zip_path = cloud_storage.fetch_from_cache(cache_hash)
-            if cached_zip_path:
+            cache_result = cloud_storage.fetch_from_cache(cache_hash)
+            if isinstance(cache_result, Path):
+                # Actual cached file found
                 logger.info(
-                    "serving_from_cache", cache_hash=cache_hash, path=cached_zip_path
+                    "serving_from_cache", cache_hash=cache_hash, blob_name=blob_name, path=cache_result
                 )
-                return streamed_response(cached_zip_path)
+                return streamed_response(cache_result)
+            elif isinstance(cache_result, dict):
+                # Placeholder found - wait for processing to complete
+                logger.info("cache_placeholder_found_waiting", cache_hash=cache_hash, blob_name=blob_name)
+                cached_zip_path = cloud_storage.wait_for_cache(cache_hash)
+                if cached_zip_path:
+                    logger.info(
+                        "serving_from_cache_after_wait", cache_hash=cache_hash, blob_name=blob_name, path=cached_zip_path
+                    )
+                    return streamed_response(cached_zip_path)
+                else:
+                    logger.info("cache_wait_timeout_processing_anyway", cache_hash=cache_hash, blob_name=blob_name)
 
         # If no cache hit or caching is disabled, proceed with normal track separation
+        # Create placeholder if caching is enabled
+        if settings.SEPARATED_TRACKS_BUCKET:
+            cache_hash = cloud_storage.get_cache_hash(model_name, song_file)
+            cloud_storage.create_cache_placeholder(cache_hash)
+
         with tempfile.TemporaryDirectory() as song_files_dir:
             song_files_dir_path = Path(song_files_dir)
             song_file_path = self.setup_song_files_dir(song_files_dir, song_file)
@@ -80,6 +100,8 @@ class SeparateTrack(APIView):
             # Upload to cache if caching is enabled
             if settings.SEPARATED_TRACKS_BUCKET:
                 cache_hash = cloud_storage.get_cache_hash(model_name, song_file)
+                blob_name = f"separated_tracks/{cache_hash}.zip"
+                logger.info("uploading_to_cache", cache_hash=cache_hash, blob_name=blob_name)
                 cloud_storage.upload_to_cache(cache_hash, zip_path)
 
             return streamed_response(zip_path)
