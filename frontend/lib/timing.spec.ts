@@ -86,16 +86,35 @@ Dialogue: 0,Default,0:00:04.00,0:00:15.00,130,{\\k900}{\\kf100}She's my ba{\\kf1
 Dialogue: 0,0:00:11.00,0:01:05.00,Default,Singer,0,0,145,,{\\k0}{\\kf100}And {\\kf100}here's {\\kf100}screen {\\kf5100}two
 `
 
-test('LyricSegmentIterator', () => {
-    let iterator = new LyricSegmentIterator(testLyrics);
-    const segmentsWithoutMarkup = Array.from(iterator);
-    expect(segmentsWithoutMarkup.length).toBe(8);
-    expect(segmentsWithoutMarkup[0].text).toBe("Be bop ");
+describe('LyricSegmentIterator', () => {
+    test('parses segments without markup', () => {
+        const iterator = new LyricSegmentIterator(testLyrics);
+        const segments = Array.from(iterator);
+        expect(segments.length).toBe(8);
+        expect(segments[0].text).toBe("Be bop ");
+    });
 
-    iterator = new LyricSegmentIterator(testLyrics, true);
-    const segmentsWithMarkup = Array.from(iterator);
-    expect(segmentsWithMarkup.length).toBe(8);
-    expect(segmentsWithMarkup[0].text).toBe("Be bop_");
+    test('parses segments with markup', () => {
+        const iterator = new LyricSegmentIterator(testLyrics, true);
+        const segments = Array.from(iterator);
+        expect(segments.length).toBe(8);
+        expect(segments[0].text).toBe("Be bop_");
+    });
+
+    test('handles leading newlines', () => {
+        const lyricsWithLeadingNewlines = "\n\nHello world";
+        const iterator = new LyricSegmentIterator(lyricsWithLeadingNewlines);
+        const segments = Array.from(iterator);
+        expect(segments.length).toBe(1);
+        expect(segments[0].text).toBe("Hello world");
+    });
+
+    test('handles only newlines', () => {
+        const justNewlines = "\n\n\n";
+        const iterator = new LyricSegmentIterator(justNewlines);
+        const segments = Array.from(iterator);
+        expect(segments.length).toBe(0);
+    });
 });
 
 test('compileLyricTimings', () => {

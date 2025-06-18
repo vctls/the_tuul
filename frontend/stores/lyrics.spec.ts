@@ -82,4 +82,17 @@ describe('Lyrics Store', () => {
       { text: 'Line 2' }
     ]);
   });
+
+  test('should handle leading newlines without crashing', () => {
+    const lyricsStore = useLyricsStore();
+    
+    // This should not crash due to empty segments array access
+    expect(() => {
+      lyricsStore.setLyrics('\n\nHello world');
+    }).not.toThrow();
+
+    expect(lyricsStore.lyricSegments).toEqual([
+      { text: 'Hello world' }
+    ]);
+  });
 });

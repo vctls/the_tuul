@@ -93,48 +93,49 @@ export function floatToTimecode(t: number): string {
 // Lyric classes
 //
 
+export function parseLyrics(lyricsText: string, includeMarkup: boolean = false): Segment[] {
+  // Parse marked up lyrics into segments.
+  // Line breaks separate segments.
+  // Double line breaks separate screens.
+  // Underscores separate segments on word boundaries between a line.
+  // Sla/shes separate segments within a word.
+  lyricsText = lyricsText.trimStart();
+  const segments = [];
+  let currentSegment = "";
+  for (let i = 0; i < lyricsText.length; i++) {
+    let finishSegment = false;
+    let char = lyricsText[i];
+    if (["\n", "/", "_"].includes(char) || i == lyricsText.length - 1) {
+      finishSegment = true;
+      if (!includeMarkup) {
+        if (char == "/") {
+          char = "";
+        } else if (char == "_") {
+          char = " "
+        }
+      }
+    }
+    if (char == "\n" && currentSegment == "" && segments.length > 0) {
+      segments[segments.length - 1].text += char;
+      continue;
+    }
+    currentSegment += char;
+    if (finishSegment) {
+      segments.push({
+        text: currentSegment,
+      });
+      currentSegment = "";
+    }
+  }
+  return segments;
+}
+
 export class LyricSegmentIterator {
   segments: Segment[];
   includeMarkup: boolean;
   constructor(lyrics: string, includeMarkup: boolean = false) {
     this.includeMarkup = includeMarkup;
-    this.segments = this.parseLyrics(lyrics);
-  }
-
-  parseLyrics(lyricsText: string): Segment[] {
-    // Parse marked up lyrics into segments.
-    // Line breaks separate segments.
-    // Double line breaks separate screens.
-    // Underscores separate segments on word boundaries between a line.
-    // Sla/shes separate segments within a word.
-    const segments = [];
-    let currentSegment = "";
-    for (let i = 0; i < lyricsText.length; i++) {
-      let finishSegment = false;
-      let char = lyricsText[i];
-      if (["\n", "/", "_"].includes(char) || i == lyricsText.length - 1) {
-        finishSegment = true;
-        if (!this.includeMarkup) {
-          if (char == "/") {
-            char = "";
-          } else if (char == "_") {
-            char = " "
-          }
-        }
-      }
-      if (char == "\n" && currentSegment == "") {
-        segments[segments.length - 1].text += char;
-        continue;
-      }
-      currentSegment += char;
-      if (finishSegment) {
-        segments.push({
-          text: currentSegment,
-        });
-        currentSegment = "";
-      }
-    }
-    return segments;
+    this.segments = parseLyrics(lyrics, includeMarkup);
   }
 
   *[Symbol.iterator](): IterableIterator<Segment> {
