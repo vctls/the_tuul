@@ -236,3 +236,21 @@ test('adjustSegmentTiming', () => {
     expect(adjustSegmentTiming(0, testEvents, { start: 0.5, end: 1.5 })[0][0]).toBe(0.5);
     expect(() => adjustSegmentTiming(8, testEvents, { start: 0.5, end: 1.5 })[0][0]).toThrow("Segment 8 not found in timings");
 });
+
+test('compileLyricTimings handles more events than segments', () => {
+    // Test with only 1 segment but many events
+    const shortLyrics = "Hello world";  // This creates 1 segment: "Hello world"
+    const tooManyEvents: LyricEvent[] = [
+        [1.0, LYRIC_MARKERS.SEGMENT_START],
+        [2.0, LYRIC_MARKERS.SEGMENT_START], // This should trigger the error
+        [3.0, LYRIC_MARKERS.SEGMENT_START], 
+        [4.0, LYRIC_MARKERS.SEGMENT_START],
+        [5.0, LYRIC_MARKERS.SEGMENT_START]
+    ];
+
+    // Should return whatever screens were built before running out of segments
+    const screens = compileLyricTimings(shortLyrics, tooManyEvents);
+    expect(screens.length).toBe(1);
+    expect(screens[0].lines.length).toBe(1);
+    expect(screens[0].lines[0].segments.length).toBe(1); // Only got the first segment
+});

@@ -412,7 +412,14 @@ export function compileLyricTimings(lyrics: string, events: LyricEvent[]): Lyric
       const timestamp = e[0];
       const marker = e[1];
       if (marker == LYRIC_MARKERS.SEGMENT_START) {
-        const segmentText = segments.next().value.text;
+        const nextSegment = segments.next();
+        if (nextSegment.done) {
+          console.error("compileLyricTimings: More SEGMENT_START events than lyric segments available", {
+            lyrics, totalEvents: events.length, currentScreens: screens.length
+          });
+          break;
+        }
+        const segmentText = nextSegment.value.text;
         const segment = new LyricSegment(segmentText, timestamp);
         if (!screen) {
           screen = new LyricsScreen();
@@ -444,7 +451,7 @@ export function compileLyricTimings(lyrics: string, events: LyricEvent[]): Lyric
       screens.push(screen);
     }
   } catch (e) {
-    console.error(e);
+    console.error("compileLyricTimings error", e, lyrics, events);
   }
   return screens;
 }
