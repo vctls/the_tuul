@@ -79,13 +79,14 @@ RUN apt-get update \
 
 # Copy local code to the container image.
 COPY api .
+# Copy gunicorn configuration
+COPY gunicorn.conf.py .
 # Copy frontend static files from the node builder to the correct location
 # for FastAPI to serve them
 COPY --from=frontend-builder /app/api/assets/bundles assets/bundles
 
 EXPOSE $PORT
 
-# Run the web service on container startup using uvicorn
-# For environments with multiple CPU cores, increase the number of workers
-# to be equal to the cores available.
-CMD exec uvicorn main:app --host 0.0.0.0 --port $PORT --workers $WORKER_COUNT
+# Run the web service on container startup using gunicorn with uvicorn workers
+# Configuration handles workers, port, and other production settings
+CMD exec gunicorn --config gunicorn.conf.py main:app
