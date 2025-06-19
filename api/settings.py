@@ -24,10 +24,8 @@ YOUTUBE_PROXY = os.getenv("YOUTUBE_PROXY", "")
 LOGGING_FORMAT = os.getenv("LOGGING_FORMAT", "console")
 
 # Static files configuration
-if DEBUG:
-    STATIC_DIR = BASE_DIR / "assets"
-else:
-    STATIC_DIR = BASE_DIR / "staticroot"
+STATIC_DIR = BASE_DIR / "assets"
+
 
 # Templates directory
 TEMPLATES_DIR = BASE_DIR / "templates"
