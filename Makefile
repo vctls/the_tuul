@@ -1,4 +1,4 @@
-.PHONY: dev install bump-version-minor bump-version-patch format-backend run-api test-api
+.PHONY: dev install bump-version-minor bump-version-patch format-backend run-api test-api build-docker
 dev:
 	@set -e; \
 	trap 'printf "\n↪ shutting down…\n"; kill 0; exit 0' INT TERM; \
@@ -34,3 +34,9 @@ run-api:
 test-api:
 	@set -e; \
 	poetry run python -c "from api.main import app; print('✅ FastAPI app loads successfully')";
+
+build-docker:
+	@set -e; \
+	docker buildx build -t "the-tuul:latest" \
+	--cache-from "the-tuul:latest" \
+	.

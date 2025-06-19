@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-MODELS_DIR = Path.cwd() / "pretrained_models"
+MODELS_DIR = Path(__file__).parent.parent / "pretrained_models"
 DEFAULT_MODEL = "UVR_MDXNET_KARA_2.onnx"
 
 AVAILABLE_MODELS = [
