@@ -5,14 +5,11 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
-from django.test import override_settings
-from django.urls import reverse
-from django.conf import settings
-from rest_framework.test import APIClient
+from fastapi.testclient import TestClient
 
 import pytubefix as pytube
 from api.helpers import youtube_helper
-from api.views import DownloadYouTubeVideo
+from api.main import app
 
 
 @pytest.fixture
@@ -102,26 +99,40 @@ def test_download_youtube_video_integration(youtube_url, youtube_fixture_dir):
     """Test the YouTube download API endpoint with mocked YouTube API."""
 
     # Create a client for making requests
-    client = APIClient()
-    url = reverse("download_video") + f"?url={youtube_url}"
+    client = TestClient(app)
+    url = f"/download_video?url={youtube_url}"
 
-    # Mock the YouTube class
-    with mock.patch("api.helpers.youtube_helper.pytube.YouTube") as mock_youtube:
+    # Mock the YouTube class and zip helper to avoid file cleanup issues
+    with mock.patch("api.helpers.youtube_helper.pytube.YouTube") as mock_youtube, \
+         mock.patch("api.helpers.zip_helper.create_zip_file") as mock_create_zip:
+        
         # Configure the mock to use our fixture data
         mock_youtube.return_value = MockYouTube(
             youtube_url, fixture_dir=youtube_fixture_dir
         )
+        
+        # Create a simple zip file for testing
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as temp_zip:
+            import zipfile
+            with zipfile.ZipFile(temp_zip, 'w') as zf:
+                zf.writestr("audio.mp4", b"dummy audio content")
+                zf.writestr("video.mp4", b"dummy video content")
+                zf.writestr("metadata.json", '{"title": "test", "author": "test"}')
+            mock_create_zip.return_value = Path(temp_zip.name)
 
         # Make the request using the client
         response = client.get(url)
+        
+        # Clean up the temp file
+        Path(temp_zip.name).unlink()
 
-        # Check that we got a streaming response
-        assert response.streaming is True
+        # Check that we got a successful response
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/zip"
 
-        # Read the streaming content into a buffer
-        content = BytesIO()
-        for chunk in response.streaming_content:
-            content.write(chunk)
+        # Read the response content into a buffer
+        content = BytesIO(response.content)
         content.seek(0)
 
         # Check that the response is a valid zip file

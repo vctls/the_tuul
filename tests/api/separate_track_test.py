@@ -5,10 +5,8 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
-from django.urls import reverse
-from rest_framework.test import APIClient
+from fastapi.testclient import TestClient
+from api.main import app
 
 
 @pytest.fixture
@@ -16,32 +14,29 @@ def audio_file():
     """Fixture providing the test audio file."""
     file_path = Path("tests/fixtures/lookin_up_in_heaven.mp3")
     with open(file_path, "rb") as f:
-        uploaded_file = SimpleUploadedFile(
-            file_path.name, f.read(), content_type="audio/mpeg"
-        )
-    return uploaded_file
+        return (file_path.name, f.read(), "audio/mpeg")
 
 
 def test_separate_track_integration(audio_file):
     """Test the music separation API endpoint."""
     # Create a client for making requests
-    client = APIClient()
-    url = reverse("separate_track")
+    client = TestClient(app)
+    url = "/separate_track"
 
     # Make the request using the client
+    filename, content, content_type = audio_file
     response = client.post(
         url,
-        data={"songFile": audio_file, "modelName": "UVR_MDXNET_KARA_2.onnx"},
-        format="multipart",
+        data={"modelName": "UVR_MDXNET_KARA_2.onnx"},
+        files={"songFile": (filename, content, content_type)},
     )
 
-    # Check that we got a streaming response
-    assert response.streaming is True
+    # Check that we got a successful response
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/zip"
 
-    # Read the streaming content into a buffer
-    content = BytesIO()
-    for chunk in response.streaming_content:
-        content.write(chunk)
+    # Read the response content into a buffer
+    content = BytesIO(response.content)
     content.seek(0)
 
     # Check that the response is a valid zip file

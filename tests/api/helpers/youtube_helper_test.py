@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 import pytubefix
 
-from helpers import youtube_helper
+from api.helpers import youtube_helper
 
 
 def test_get_youtube_streams():

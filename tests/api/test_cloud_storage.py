@@ -4,25 +4,22 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
 
 from api.helpers import cloud_storage
 
 
 def test_get_cache_hash():
-    # Create a mock file
+    # Create file content and model name
     file_content = b"test file content"
-    mock_file = SimpleUploadedFile("test.mp3", file_content)
     model_name = "test_model"
 
     # Calculate expected hash
     expected_hash = hashlib.sha256()
     expected_hash.update(file_content)
-    expected_hash.update(model_name.encode('utf-8'))
+    expected_hash.update(model_name.encode("utf-8"))
 
     # Get hash from the function
-    result = cloud_storage.get_cache_hash(model_name, mock_file)
+    result = cloud_storage.get_cache_hash(model_name, file_content)
 
     # Check if the hash matches
     assert result == expected_hash.hexdigest()
@@ -31,8 +28,8 @@ def test_get_cache_hash():
 @pytest.mark.parametrize(
     "bucket_exists,blob_exists,expected_result",
     [
-        (True, True, True),    # Bucket exists and blob exists - should return path
-        (True, False, None),   # Bucket exists but blob doesn't - should return None
+        (True, True, True),  # Bucket exists and blob exists - should return path
+        (True, False, None),  # Bucket exists but blob doesn't - should return None
         (False, False, None),  # Bucket doesn't exist - should return None
     ],
 )
@@ -49,28 +46,29 @@ def test_fetch_from_cache(mock_storage, bucket_exists, blob_exists, expected_res
 
     if not bucket_exists:
         from google.cloud.exceptions import NotFound
+
         mock_client.bucket.side_effect = NotFound("Bucket not found")
 
     if not blob_exists:
         from google.cloud.exceptions import NotFound
+
         mock_blob.download_to_filename.side_effect = NotFound("Blob not found")
 
     # Test fetch_from_cache
-    with override_settings(SEPARATED_TRACKS_BUCKET="test-bucket"):
-        result = cloud_storage.fetch_from_cache("test_hash")
+    result = cloud_storage.fetch_from_cache("test_hash", "test-bucket")
 
-        if expected_result is True:
-            assert result is not None
-            assert isinstance(result, Path)
-        else:
-            assert result is None
+    if expected_result is True:
+        assert result is not None
+        assert isinstance(result, Path)
+    else:
+        assert result is None
 
 
 @pytest.mark.parametrize(
     "bucket_exists,upload_succeeds,expected_result",
     [
-        (True, True, True),     # Bucket exists and upload succeeds
-        (True, False, False),   # Bucket exists but upload fails
+        (True, True, True),  # Bucket exists and upload succeeds
+        (True, False, False),  # Bucket exists but upload fails
         (False, False, False),  # Bucket doesn't exist
     ],
 )
@@ -91,13 +89,13 @@ def test_upload_to_cache(mock_storage, bucket_exists, upload_succeeds, expected_
 
         if not bucket_exists:
             from google.cloud.exceptions import NotFound
+
             mock_client.bucket.side_effect = NotFound("Bucket not found")
 
         if not upload_succeeds:
             mock_blob.upload_from_filename.side_effect = Exception("Upload failed")
 
         # Test upload_to_cache
-        with override_settings(SEPARATED_TRACKS_BUCKET="test-bucket"):
-            result = cloud_storage.upload_to_cache("test_hash", temp_path)
+        result = cloud_storage.upload_to_cache("test_hash", temp_path, "test-bucket")
 
-            assert result is expected_result
+        assert result is expected_result

@@ -36,7 +36,7 @@ export default defineConfig({
 
     /* Run local dev server before starting the tests */
     webServer: {
-        command: 'just run-prod',
+        command: 'make dev',
         url: process.env.BASE_URL || 'http://localhost:8000',
         reuseExistingServer: !process.env.CI,
         timeout: 120000,
