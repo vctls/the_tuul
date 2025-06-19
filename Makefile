@@ -1,15 +1,15 @@
-.PHONY: dev install bump-version-minor bump-version-patch format-backend
+.PHONY: dev install bump-version-minor bump-version-patch format-backend run-api test-api
 dev:
 	@set -e; \
 	trap 'printf "\n↪ shutting down…\n"; kill 0' INT TERM; \
 	npm run dev & \
-	(cd api && poetry run ./manage.py runserver) & \
+	poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload & \
 	wait || true
 
 install:
 	@set -e; \
 	npm install; \
-	(cd api && poetry lock && poetry install)
+	poetry lock && poetry install
 
 bump-version-minor:
 	@set -e; \
@@ -23,4 +23,12 @@ bump-version-patch:
 
 format-backend:
 	@set -e; \
-	(cd api && poetry run black .);
+	poetry run black api/;
+
+run-api:
+	@set -e; \
+	poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload;
+
+test-api:
+	@set -e; \
+	poetry run python -c "from api.main import app; print('✅ FastAPI app loads successfully')";

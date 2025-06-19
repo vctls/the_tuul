@@ -1,9 +1,8 @@
-import json
 from pathlib import Path
 import structlog
 
 import pytubefix as pytube
-from django.conf import settings
+from .. import settings
 
 logger = structlog.get_logger(__name__)
 

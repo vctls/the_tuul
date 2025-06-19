@@ -80,16 +80,12 @@ RUN apt-get update \
 # Copy local code to the container image.
 COPY api .
 # Copy frontend static files from the node builder to the correct location
-# for Django to serve them (based on settings.py)
+# for FastAPI to serve them
 COPY --from=frontend-builder /app/api/assets/bundles assets/bundles
-
-# Run collectstatic to gather all static files
-RUN ./manage.py collectstatic --noinput
 
 EXPOSE $PORT
 
-# Run the web service on container startup. Here we use the gunicorn
-# webserver, with one worker process and 8 threads.
+# Run the web service on container startup using uvicorn
 # For environments with multiple CPU cores, increase the number of workers
 # to be equal to the cores available.
-CMD exec gunicorn --bind 0.0.0.0:$PORT --workers $WORKER_COUNT --threads 8 --timeout 0 wsgi:application
+CMD exec uvicorn main:app --host 0.0.0.0 --port $PORT --workers $WORKER_COUNT

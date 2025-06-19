@@ -2,15 +2,14 @@ import json
 from unittest import mock
 
 import pytest
-from django.urls import reverse
-from rest_framework import status
-from rest_framework.test import APIClient
+from fastapi.testclient import TestClient
+from api.main import app
 
 
 def test_log_error_success():
     """Test that LogError view logs client errors and returns success."""
-    client = APIClient()
-    url = reverse("log_error")
+    client = TestClient(app)
+    url = "/log_error"
     
     error_data = {
         "message": "JavaScript error occurred",
@@ -20,16 +19,15 @@ def test_log_error_success():
         "column": 5
     }
     
-    with mock.patch("views.logger") as mock_logger:
+    with mock.patch("api.main.logger") as mock_logger:
         response = client.post(
             url,
-            data=error_data,
-            format="json"
+            json=error_data
         )
     
     # Check response
-    assert response.status_code == status.HTTP_200_OK
-    assert response.data == {"success": True}
+    assert response.status_code == 200
+    assert response.json() == {"success": True}
     
     # Check that logger.error was called with correct parameters
     mock_logger.error.assert_called_once_with(
@@ -40,50 +38,62 @@ def test_log_error_success():
 
 def test_log_error_no_message():
     """Test LogError view handles missing message field."""
-    client = APIClient()
-    url = reverse("log_error")
+    client = TestClient(app)
+    url = "/log_error"
     
     error_data = {
         "stack": "Error: test error\n    at function1 (app.js:10:5)",
         "url": "https://example.com/page"
     }
     
-    with mock.patch("views.logger") as mock_logger:
+    with mock.patch("api.main.logger") as mock_logger:
         response = client.post(
             url,
-            data=error_data,
-            format="json"
+            json=error_data
         )
     
     # Check response
-    assert response.status_code == status.HTTP_200_OK
-    assert response.data == {"success": True}
+    assert response.status_code == 200
+    assert response.json() == {"success": True}
     
-    # Check that logger.error was called with default message
+    # Check that logger.error was called with default message (FastAPI includes all fields)
+    expected_data = {
+        "message": None,
+        "stack": "Error: test error\n    at function1 (app.js:10:5)",
+        "url": "https://example.com/page",
+        "line": None,
+        "column": None
+    }
     mock_logger.error.assert_called_once_with(
         "Client error: <no message>",
-        extra=error_data
+        extra=expected_data
     )
 
 
 def test_log_error_empty_data():
     """Test LogError view handles empty request data."""
-    client = APIClient()
-    url = reverse("log_error")
+    client = TestClient(app)
+    url = "/log_error"
     
-    with mock.patch("views.logger") as mock_logger:
+    with mock.patch("api.main.logger") as mock_logger:
         response = client.post(
             url,
-            data={},
-            format="json"
+            json={}
         )
     
     # Check response
-    assert response.status_code == status.HTTP_200_OK
-    assert response.data == {"success": True}
+    assert response.status_code == 200
+    assert response.json() == {"success": True}
     
-    # Check that logger.error was called with default message and empty data
+    # Check that logger.error was called with default message and empty data (FastAPI includes all fields)
+    expected_data = {
+        "message": None,
+        "stack": None,
+        "url": None,
+        "line": None,
+        "column": None
+    }
     mock_logger.error.assert_called_once_with(
         "Client error: <no message>",
-        extra={}
+        extra=expected_data
     )

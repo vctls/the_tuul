@@ -6,32 +6,29 @@ from pathlib import Path
 from typing import Optional
 
 import structlog
-from django.conf import settings
-from django.core.files import File
 from google.cloud import storage
 from google.cloud.exceptions import NotFound
+
+from .. import settings
 
 logger = structlog.get_logger(__name__)
 
 
-def get_cache_hash(model_name: str, song_file: File) -> str:
+def get_cache_hash(model_name: str, song_file_data: bytes) -> str:
     """
     Generate a hash from the model name and song file content.
     This hash is used as a key for caching separated tracks.
     """
-    # Create a copy of the file in memory
-    song_file.seek(0)
-    file_data = song_file.read()
-    song_file.seek(0)  # Reset the file pointer for future reads
-
     # Create a hash of the file content and model name
     hash_obj = hashlib.sha256()
-    hash_obj.update(file_data)
+    hash_obj.update(song_file_data)
     hash_obj.update(model_name.encode("utf-8"))
     return hash_obj.hexdigest()
 
 
-def fetch_from_cache(cache_hash: str) -> Optional[Path] | dict:
+def fetch_from_cache(
+    cache_hash: str, bucket_name: Optional[str] = None
+) -> Optional[Path] | dict:
     """
     Try to fetch a zip file from Google Cloud Storage based on the hash.
     Returns:
@@ -39,14 +36,16 @@ def fetch_from_cache(cache_hash: str) -> Optional[Path] | dict:
     - dict with placeholder data if placeholder JSON found
     - None if not found at all
     """
-    if not settings.SEPARATED_TRACKS_BUCKET:
+    if bucket_name is None:
+        bucket_name = settings.SEPARATED_TRACKS_BUCKET
+    if not bucket_name:
         return None
 
     blob_name = f"separated_tracks/{cache_hash}.zip"
 
     try:
         storage_client = storage.Client()
-        bucket = storage_client.bucket(settings.SEPARATED_TRACKS_BUCKET)
+        bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(blob_name)
 
         # Check if the blob exists
@@ -89,12 +88,16 @@ def fetch_from_cache(cache_hash: str) -> Optional[Path] | dict:
         return None
 
 
-def upload_to_cache(cache_hash: str, zip_path: Path) -> bool:
+def upload_to_cache(
+    cache_hash: str, zip_path: Path, bucket_name: Optional[str] = None
+) -> bool:
     """
     Upload the zip file to Google Cloud Storage using the hash as a key.
     Returns True if successful, False otherwise.
     """
-    if not settings.SEPARATED_TRACKS_BUCKET:
+    if bucket_name is None:
+        bucket_name = settings.SEPARATED_TRACKS_BUCKET
+    if not bucket_name:
         return False
 
     blob_name = f"separated_tracks/{cache_hash}.zip"
@@ -102,7 +105,7 @@ def upload_to_cache(cache_hash: str, zip_path: Path) -> bool:
     try:
         # Upload the file to GCS
         storage_client = storage.Client()
-        bucket = storage_client.bucket(settings.SEPARATED_TRACKS_BUCKET)
+        bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(blob_name)
 
         blob.upload_from_filename(zip_path)
@@ -124,13 +127,17 @@ def upload_to_cache(cache_hash: str, zip_path: Path) -> bool:
         return False
 
 
-def create_cache_placeholder(cache_hash: str) -> bool:
+def create_cache_placeholder(
+    cache_hash: str, bucket_name: Optional[str] = None
+) -> bool:
     """
     Create a placeholder JSON file in GCS to indicate processing has started.
     Uses the same filename as the final cache file.
     Returns True if successful, False otherwise.
     """
-    if not settings.SEPARATED_TRACKS_BUCKET:
+    if bucket_name is None:
+        bucket_name = settings.SEPARATED_TRACKS_BUCKET
+    if not bucket_name:
         return False
 
     blob_name = f"separated_tracks/{cache_hash}.zip"
@@ -138,7 +145,7 @@ def create_cache_placeholder(cache_hash: str) -> bool:
 
     try:
         storage_client = storage.Client()
-        bucket = storage_client.bucket(settings.SEPARATED_TRACKS_BUCKET)
+        bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(blob_name)
 
         blob.upload_from_string(
@@ -160,13 +167,18 @@ def create_cache_placeholder(cache_hash: str) -> bool:
 
 
 def wait_for_cache(
-    cache_hash: str, timeout_seconds: int = 1200, poll_interval: int = 30
+    cache_hash: str,
+    bucket_name: Optional[str] = None,
+    timeout_seconds: int = 1200,
+    poll_interval: int = 30,
 ) -> Optional[Path]:
     """
     Wait for a cached file to become available by polling.
     Returns the cached file path if found within timeout, None otherwise.
     """
-    if not settings.SEPARATED_TRACKS_BUCKET:
+    if bucket_name is None:
+        bucket_name = settings.SEPARATED_TRACKS_BUCKET
+    if not bucket_name:
         return None
 
     blob_name = f"separated_tracks/{cache_hash}.zip"
@@ -181,7 +193,7 @@ def wait_for_cache(
 
     while time.time() - start_time < timeout_seconds:
         # Try to fetch from cache - only return if it's an actual Path
-        cache_result = fetch_from_cache(cache_hash)
+        cache_result = fetch_from_cache(cache_hash, bucket_name)
         if isinstance(cache_result, Path):
             logger.info(
                 "cache_wait_success",
