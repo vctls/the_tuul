@@ -61,13 +61,14 @@ class LogErrorRequest(BaseModel):
 def streamed_response(file_path: Path) -> StreamingResponse:
     """Return a streaming response for the given file path."""
 
+    # Read the entire file into memory to avoid issues with temp file cleanup
+    file_content = file_path.read_bytes()
+
     def streaming_content():
-        with file_path.open("rb") as f:
-            while True:
-                data = f.read(1024 * 1024)
-                if not data:
-                    break
-                yield data
+        # Stream the content in chunks
+        chunk_size = 1024 * 1024  # 1MB chunks
+        for i in range(0, len(file_content), chunk_size):
+            yield file_content[i : i + chunk_size]
 
     return StreamingResponse(streaming_content(), media_type="application/zip")
 
