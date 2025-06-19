@@ -2,6 +2,7 @@
 Structlog processors. See the LOGGING section in settings.py
 For more examples see https://www.structlog.org/en/stable/_modules/structlog/processors.html#TimeStamper
 """
+
 from django.dispatch import receiver
 from django_structlog import signals
 from django.http.request import HttpRequest
