@@ -1,4 +1,4 @@
-.PHONY: dev install bump-version-minor bump-version-patch
+.PHONY: dev install bump-version-minor bump-version-patch format-backend
 dev:
 	@set -e; \
 	trap 'printf "\n↪ shutting down…\n"; kill 0' INT TERM; \
@@ -20,3 +20,7 @@ bump-version-patch:
 	@set -e; \
 	# Uses "version" command in package.json to bump python version
 	npm version patch;
+
+format-backend:
+	@set -e; \
+	(cd api && poetry run black .);
