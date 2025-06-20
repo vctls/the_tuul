@@ -4,7 +4,16 @@ from pathlib import Path
 from typing import Optional
 
 import structlog
-from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi import (
+    BackgroundTasks,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -58,6 +67,10 @@ class LogErrorRequest(BaseModel):
     column: Optional[int] = None
 
 
+class SeparationPollResponse(BaseModel):
+    finishedTrackURL: str
+
+
 def streamed_response(file_path: Path) -> StreamingResponse:
     """Return a streaming response for the given file path."""
 
@@ -73,6 +86,35 @@ def streamed_response(file_path: Path) -> StreamingResponse:
     return StreamingResponse(streaming_content(), media_type="application/zip")
 
 
+def process_track_separation_background(
+    cache_hash: str, model_name: str, song_content: bytes, song_filename: str
+):
+    """Background task to process track separation and upload to cache."""
+    with tempfile.TemporaryDirectory() as song_files_dir:
+        song_files_dir_path = Path(song_files_dir)
+
+        # Save uploaded file
+        song_file_path = song_files_dir_path / song_filename
+        with song_file_path.open("wb") as f:
+            f.write(song_content)
+
+        accompaniment_path, vocal_path = music_separation.split_song(
+            song_file_path, song_files_dir_path, model_name=model_name
+        )
+        zip_path = zip_helper.create_zip_file(
+            song_files_dir_path / "split_song.zip",
+            [(accompaniment_path, "accompaniment.wav"), (vocal_path, "vocals.wav")],
+        )
+        logger.info("background_zip_complete", path=zip_path, cache_hash=cache_hash)
+
+        # Upload to cache
+        blob_name = f"separated_tracks/{cache_hash}.zip"
+        logger.info(
+            "background_uploading_to_cache", cache_hash=cache_hash, blob_name=blob_name
+        )
+        cloud_storage.upload_to_cache(cache_hash, zip_path)
+
+
 @app.get("/")
 async def index(request: Request):
     """Serve the main application page."""
@@ -85,7 +127,11 @@ async def index(request: Request):
 
 
 @app.post("/separate_track")
-async def separate_track(songFile: UploadFile = File(...), modelName: str = Form(...)):
+async def separate_track(
+    background_tasks: BackgroundTasks,
+    songFile: UploadFile = File(...),
+    modelName: str = Form(...),
+):
     """Return a zip containing vocal and accompaniment splits of songFile."""
     if not songFile or not modelName:
         raise HTTPException(
@@ -118,62 +164,59 @@ async def separate_track(songFile: UploadFile = File(...), modelName: str = Form
                 path=cache_result,
             )
             return streamed_response(cache_result)
-        elif isinstance(cache_result, dict):
-            # Placeholder found - wait for processing to complete
+        elif isinstance(cache_result, str):
+            # Placeholder found - return URL for client polling
             logger.info(
-                "cache_placeholder_found_waiting",
+                "cache_placeholder_found_returning_url",
                 cache_hash=cache_hash,
                 blob_name=blob_name,
+                poll_url=cache_result,
             )
-            cached_zip_path = cloud_storage.wait_for_cache(cache_hash)
-            if cached_zip_path:
-                logger.info(
-                    "serving_from_cache_after_wait",
-                    cache_hash=cache_hash,
-                    blob_name=blob_name,
-                    path=cached_zip_path,
-                )
-                return streamed_response(cached_zip_path)
-            else:
-                logger.info(
-                    "cache_wait_timeout_processing_anyway",
-                    cache_hash=cache_hash,
-                    blob_name=blob_name,
-                )
+            return SeparationPollResponse(finishedTrackURL=cache_result)
 
-    # If no cache hit or caching is disabled, proceed with normal track separation
-    # Create placeholder if caching is enabled
+    # If no cache hit or caching is disabled, proceed with track separation
     if settings.SEPARATED_TRACKS_BUCKET:
+        # Create placeholder and get public URL for polling
         cache_hash = cloud_storage.get_cache_hash(modelName, song_content)
-        cloud_storage.create_cache_placeholder(cache_hash)
+        poll_url = cloud_storage.create_cache_placeholder(cache_hash)
 
-    with tempfile.TemporaryDirectory() as song_files_dir:
-        song_files_dir_path = Path(song_files_dir)
-
-        # Save uploaded file
-        song_file_path = song_files_dir_path / (songFile.filename or "uploaded_song")
-        with song_file_path.open("wb") as f:
-            f.write(song_content)
-
-        accompaniment_path, vocal_path = music_separation.split_song(
-            song_file_path, song_files_dir_path, model_name=modelName
-        )
-        zip_path = zip_helper.create_zip_file(
-            song_files_dir_path / "split_song.zip",
-            [(accompaniment_path, "accompaniment.wav"), (vocal_path, "vocals.wav")],
-        )
-        logger.info("zip_complete", path=zip_path)
-
-        # Upload to cache if caching is enabled
-        if settings.SEPARATED_TRACKS_BUCKET:
-            cache_hash = cloud_storage.get_cache_hash(modelName, song_content)
-            blob_name = f"separated_tracks/{cache_hash}.zip"
-            logger.info(
-                "uploading_to_cache", cache_hash=cache_hash, blob_name=blob_name
+        if poll_url:
+            # Start background task to process separation
+            background_tasks.add_task(
+                process_track_separation_background,
+                cache_hash,
+                modelName,
+                song_content,
+                songFile.filename or "uploaded_song",
             )
-            cloud_storage.upload_to_cache(cache_hash, zip_path)
 
-        return streamed_response(zip_path)
+            # Return URL immediately for client to poll
+            logger.info("returning_poll_url", cache_hash=cache_hash, poll_url=poll_url)
+            return SeparationPollResponse(finishedTrackURL=poll_url)
+        else:
+            logger.warning("failed_to_create_placeholder", cache_hash=cache_hash)
+    else:
+        # No caching - process synchronously
+        with tempfile.TemporaryDirectory() as song_files_dir:
+            song_files_dir_path = Path(song_files_dir)
+
+            # Save uploaded file
+            song_file_path = song_files_dir_path / (
+                songFile.filename or "uploaded_song"
+            )
+            with song_file_path.open("wb") as f:
+                f.write(song_content)
+
+            accompaniment_path, vocal_path = music_separation.split_song(
+                song_file_path, song_files_dir_path, model_name=modelName
+            )
+            zip_path = zip_helper.create_zip_file(
+                song_files_dir_path / "split_song.zip",
+                [(accompaniment_path, "accompaniment.wav"), (vocal_path, "vocals.wav")],
+            )
+            logger.info("zip_complete", path=zip_path)
+
+            return streamed_response(zip_path)
 
 
 @app.get("/download_video")
