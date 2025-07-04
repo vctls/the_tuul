@@ -19,7 +19,7 @@ test.describe('Timings File Upload', () => {
   test('Submit tab becomes enabled after uploading timings file', async ({ page }) => {
     // 1. Navigate to Song Info tab and upload audio
     await navigateToTab(page, TabId.SongInfo);
-    await uploadAudioFile(page, defaultTestConfig.audioFile, "David Byrne", "My Fair Lady");
+    await uploadAudioFile(page, defaultTestConfig.audioFile, defaultTestConfig.artist, defaultTestConfig.title);
 
     // 2. Navigate to Lyrics tab and enter lyrics
     await navigateToTab(page, TabId.LyricInput);

@@ -7,9 +7,32 @@ import { getFixturePath } from './setupHelpers';
 import JSZip from 'jszip';
 
 /**
- * Mocks the separate_track API to return a fixture ZIP file
+ * Mocks the separate_track API to return a JSON response with polling URL
  */
 export async function mockSeparateTrackApi(context: BrowserContext, zipFilename: string = 'split_song.zip'): Promise<void> {
+  const pollUrl = `https://storage.googleapis.com/test-bucket/separated_tracks/${zipFilename}`;
+  
+  // Mock the initial separate_track endpoint to return polling URL
+  await context.route('**/separate_track', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        finishedTrackURL: pollUrl
+      })
+    });
+
+    console.log('Mocked separate_track endpoint with polling URL:', pollUrl);
+  });
+
+  // Mock the polling endpoint to return the ZIP file
+  await mockPollingEndpoint(context, pollUrl);
+}
+
+/**
+ * Mocks the separate_track API to return a ZIP file directly (for testing non-cached behavior)
+ */
+export async function mockSeparateTrackApiDirect(context: BrowserContext, zipFilename: string = 'split_song.zip'): Promise<void> {
   await context.route('**/separate_track', async (route) => {
     // Get the path to the fixture file
     const audioZipPath = getFixturePath(zipFilename);
@@ -27,7 +50,35 @@ export async function mockSeparateTrackApi(context: BrowserContext, zipFilename:
       }
     });
 
-    console.log('Mocked separate_track endpoint with fixture file:', audioZipPath);
+    console.log('Mocked separate_track endpoint with direct ZIP file:', audioZipPath);
+  });
+}
+
+/**
+ * Mocks a polling endpoint to return a ZIP file
+ */
+export async function mockPollingEndpoint(context: BrowserContext, pollUrl: string): Promise<void> {
+  await context.route(pollUrl, async (route) => {
+    // Extract filename from URL
+    const filename = pollUrl.split('/').pop() || 'split_song.zip';
+    
+    // Get the path to the fixture file
+    const audioZipPath = getFixturePath(filename);
+
+    // Read the file contents
+    const fileBuffer = await fs.readFile(audioZipPath);
+
+    // Fulfill the request with the file
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/zip',
+      body: fileBuffer,
+      headers: {
+        'Content-Disposition': 'attachment; filename=audio.zip'
+      }
+    });
+
+    console.log('Mocked polling endpoint with fixture file:', audioZipPath);
   });
 }
 

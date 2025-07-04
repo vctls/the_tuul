@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
+  defaultTestConfig,
   setupTestEnvironment,
   navigateToTab,
   TabId,
@@ -26,7 +27,7 @@ test.describe('Multi-screen Timing and Adjustment', () => {
   test.fixme('Adjust timing on first screen and continue with second screen. Region dragging events are being blocked somehow.', async ({ page }) => {
     // 1. Setup: Upload audio and enter a 2-screen lyrics text
     await navigateToTab(page, TabId.SongInfo);
-    await uploadAudioFile(page, 'my_fair_lady.mp3', "David Byrne", "My Fair Lady");
+    await uploadAudioFile(page, defaultTestConfig.audioFile, defaultTestConfig.artist, defaultTestConfig.title);
 
     await navigateToTab(page, TabId.LyricInput);
 
