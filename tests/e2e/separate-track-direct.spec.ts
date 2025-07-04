@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import {
   defaultTestConfig,
   setupTestEnvironment,
@@ -6,7 +6,7 @@ import {
   TabId,
   uploadAudioFile,
   loadAndEnterLyrics,
-  mockSeparateTrackApi,
+  mockSeparateTrackApiDirect,
   expectTabToBeDisabled,
   expectTabToBeEnabled,
   loadAndEnterTimings,
@@ -14,59 +14,59 @@ import {
   expectFileDownload
 } from './utils';
 
-test.describe('Karaoke Track Creation', () => {
+test.describe('Separate Track Direct Response', () => {
   test.describe.configure({ timeout: 300000 }); // 5 minutes
 
   test.beforeEach(async ({ page }) => {
     await setupTestEnvironment(page);
   });
 
-  test('Create a complete karaoke track', async ({ page, context }) => {
-    // Setup API mock
-    await mockSeparateTrackApi(context);
+  test('Create a complete karaoke track when separate_track returns ZIP directly', async ({ page, context }) => {
+    // Setup API mock to return ZIP directly (simulating non-cached behavior)
+    await mockSeparateTrackApiDirect(context);
 
-    // 1. Navigate to Song Info tab and upload audio
+    // Navigate to Song Info tab and upload audio
     await navigateToTab(page, TabId.SongInfo);
     await uploadAudioFile(page, defaultTestConfig.audioFile, defaultTestConfig.artist, defaultTestConfig.title);
 
-    // 2. Verify Song Timing tab is initially disabled
+    // Wait for the separation to complete
+    await page.waitForTimeout(2000); // Give some time for the API call to complete
+
+    // Verify Song Timing tab is initially disabled
     await expectTabToBeDisabled(page, TabId.SongTiming);
 
-    // 3. Navigate to Lyrics tab and enter lyrics
+    // Navigate to Lyrics tab and enter lyrics
     await navigateToTab(page, TabId.LyricInput);
     await loadAndEnterLyrics(page, defaultTestConfig.lyricsFile);
-
-    // Take screenshot
-    await page.screenshot({ path: 'lyrics.png' });
 
     // Go back to Song Info tab to refresh tab states
     await navigateToTab(page, TabId.SongInfo);
 
-    // 4. Verify Song Timing tab is now enabled
+    // Verify Song Timing tab is now enabled
     await expectTabToBeEnabled(page, TabId.SongTiming);
 
-    // 5. Navigate to Song Timing tab
+    // Navigate to Song Timing tab
     await navigateToTab(page, TabId.SongTiming);
 
-    // 6. Verify Submit tab is initially disabled
+    // Verify Submit tab is initially disabled
     await expectTabToBeDisabled(page, TabId.Submit);
 
-    // 7. Load and enter timings from fixture file
+    // Load and enter timings from fixture file
     await loadAndEnterTimings(page, defaultTestConfig.timingsFile);
 
-    // 8. Verify success message
+    // Verify success message
     await expectSuccessMessage(page, '.song-timing-tab');
 
-    // 9. Verify Submit tab is now enabled
+    // Verify Submit tab is now enabled
     await expectTabToBeEnabled(page, TabId.Submit);
 
-    // 10. Navigate to Submit tab
+    // Navigate to Submit tab
     await navigateToTab(page, TabId.Submit);
 
-    // 11. Click Create Video
+    // Click Create Video
     await page.click('button:has-text("Create Video")');
 
-    // 12. Wait for video download and verify
+    // Wait for video download and verify
     const VIDEO_CREATION_TIMEOUT = 180000; // 3 minutes
     const videoPath = await expectFileDownload(page, VIDEO_CREATION_TIMEOUT);
     console.log('Video download path:', videoPath);

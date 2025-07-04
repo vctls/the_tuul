@@ -12,6 +12,8 @@ export interface TestConfig {
   audioFile: string;
   lyricsFile: string;
   timingsFile: string;
+  artist: string;
+  title: string;
   [key: string]: string;
 }
 
@@ -22,6 +24,8 @@ export const defaultTestConfig: TestConfig = {
   audioFile: 'my_fair_lady.mp3',
   lyricsFile: 'lyrics.txt',
   timingsFile: 'timings.json',
+  artist: 'David Byrne',
+  title: 'My Fair Lady',
 };
 
 /**

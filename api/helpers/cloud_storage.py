@@ -28,12 +28,12 @@ def get_cache_hash(model_name: str, song_file_data: bytes) -> str:
 
 def fetch_from_cache(
     cache_hash: str, bucket_name: Optional[str] = None
-) -> Optional[Path] | dict:
+) -> Optional[Path] | str:
     """
     Try to fetch a zip file from Google Cloud Storage based on the hash.
     Returns:
     - Path to downloaded file if actual cache found
-    - dict with placeholder data if placeholder JSON found
+    - str with public URL if placeholder JSON found
     - None if not found at all
     """
     if bucket_name is None:
@@ -56,12 +56,10 @@ def fetch_from_cache(
         # Check content type to determine if it's a placeholder or actual cache
         blob.reload()
         if blob.content_type == "application/json":
-            placeholder_content = blob.download_as_text()
-            placeholder_data = json.loads(placeholder_content)
             logger.info(
                 "cache_placeholder_found", cache_hash=cache_hash, blob_name=blob_name
             )
-            return placeholder_data
+            return blob.public_url
 
         # Create a temporary file to download the content
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
@@ -129,16 +127,16 @@ def upload_to_cache(
 
 def create_cache_placeholder(
     cache_hash: str, bucket_name: Optional[str] = None
-) -> bool:
+) -> Optional[str]:
     """
     Create a placeholder JSON file in GCS to indicate processing has started.
     Uses the same filename as the final cache file.
-    Returns True if successful, False otherwise.
+    Returns the blob's public URL if successful, None otherwise.
     """
     if bucket_name is None:
         bucket_name = settings.SEPARATED_TRACKS_BUCKET
     if not bucket_name:
-        return False
+        return None
 
     blob_name = f"separated_tracks/{cache_hash}.zip"
     placeholder_data = {"startTime": int(time.time()), "status": "processing"}
@@ -154,7 +152,7 @@ def create_cache_placeholder(
         logger.info(
             "cache_placeholder_created", cache_hash=cache_hash, blob_name=blob_name
         )
-        return True
+        return blob.public_url
 
     except Exception as e:
         logger.error(
@@ -163,53 +161,4 @@ def create_cache_placeholder(
             blob_name=blob_name,
             error=str(e),
         )
-        return False
-
-
-def wait_for_cache(
-    cache_hash: str,
-    bucket_name: Optional[str] = None,
-    timeout_seconds: int = 1200,
-    poll_interval: int = 30,
-) -> Optional[Path]:
-    """
-    Wait for a cached file to become available by polling.
-    Returns the cached file path if found within timeout, None otherwise.
-    """
-    if bucket_name is None:
-        bucket_name = settings.SEPARATED_TRACKS_BUCKET
-    if not bucket_name:
         return None
-
-    blob_name = f"separated_tracks/{cache_hash}.zip"
-    start_time = time.time()
-
-    logger.info(
-        "cache_wait_start",
-        cache_hash=cache_hash,
-        blob_name=blob_name,
-        timeout_seconds=timeout_seconds,
-    )
-
-    while time.time() - start_time < timeout_seconds:
-        # Try to fetch from cache - only return if it's an actual Path
-        cache_result = fetch_from_cache(cache_hash, bucket_name)
-        if isinstance(cache_result, Path):
-            logger.info(
-                "cache_wait_success",
-                cache_hash=cache_hash,
-                blob_name=blob_name,
-                wait_time=time.time() - start_time,
-            )
-            return cache_result
-
-        # Sleep before next poll
-        time.sleep(poll_interval)
-
-    logger.info(
-        "cache_wait_timeout",
-        cache_hash=cache_hash,
-        blob_name=blob_name,
-        timeout_seconds=timeout_seconds,
-    )
-    return None
