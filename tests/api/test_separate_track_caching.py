@@ -34,16 +34,11 @@ def test_separate_track_with_cache_hit(
     request_factory,
     song_file,
 ):
-    """Test that the view returns cached file when available."""
+    """Test that the view returns URL when cached file is available."""
     # Setup mocks
     mock_get_cache_hash.return_value = "test_hash"
-
-    # Create a temporary file that will be our "cached" file
-    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-        temp_path = Path(temp_file.name)
-        temp_file.write(b"cached zip content")
-
-    mock_fetch_from_cache.return_value = temp_path
+    # Return URL for cached file
+    mock_fetch_from_cache.return_value = "https://example.com/bucket/separated_tracks/test_hash.zip"
 
     # Create the request
     filename, content, content_type = song_file
@@ -64,12 +59,12 @@ def test_separate_track_with_cache_hit(
         mock_create_zip.assert_not_called()
         mock_upload_to_cache.assert_not_called()
 
-        # Assert that the response is successful
+        # Assert that the response is JSON with URL
         assert response.status_code == 200
-        assert response.headers["content-type"] == "application/zip"
-
-    # Clean up the temp file
-    temp_path.unlink()
+        assert response.headers["content-type"] == "application/json"
+        response_data = response.json()
+        assert "finishedTrackURL" in response_data
+        assert response_data["finishedTrackURL"] == "https://example.com/bucket/separated_tracks/test_hash.zip"
 
 
 @mock.patch("api.karaoke.music_separation.split_song")

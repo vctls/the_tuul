@@ -28,12 +28,11 @@ def get_cache_hash(model_name: str, song_file_data: bytes) -> str:
 
 def fetch_from_cache(
     cache_hash: str, bucket_name: Optional[str] = None
-) -> Optional[Path] | str:
+) -> Optional[str]:
     """
     Try to fetch a zip file from Google Cloud Storage based on the hash.
     Returns:
-    - Path to downloaded file if actual cache found
-    - str with public URL if placeholder JSON found
+    - str with public URL if cache found (either placeholder or completed)
     - None if not found at all
     """
     if bucket_name is None:
@@ -59,19 +58,13 @@ def fetch_from_cache(
             logger.info(
                 "cache_placeholder_found", cache_hash=cache_hash, blob_name=blob_name
             )
-            return blob.public_url
-
-        # Create a temporary file to download the content
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
-        temp_path = Path(temp_file.name)
-        temp_file.close()
-
-        # Download the blob to a temporary file
-        blob.download_to_filename(temp_path)
-        logger.info(
-            "cache_hit", cache_hash=cache_hash, blob_name=blob_name, path=temp_path
-        )
-        return temp_path
+        else:
+            logger.info(
+                "cache_hit", cache_hash=cache_hash, blob_name=blob_name
+            )
+        
+        # Return public URL for both placeholder and completed cache
+        return blob.public_url
 
     except NotFound:
         logger.info("cache_miss", cache_hash=cache_hash, blob_name=blob_name)
