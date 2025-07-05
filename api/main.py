@@ -155,19 +155,10 @@ async def separate_track(
 
         # Try to fetch from cache
         cache_result = cloud_storage.fetch_from_cache(cache_hash)
-        if isinstance(cache_result, Path):
-            # Actual cached file found
+        if cache_result:
+            # Cache found (either placeholder or completed) - return URL for client polling
             logger.info(
-                "serving_from_cache",
-                cache_hash=cache_hash,
-                blob_name=blob_name,
-                path=cache_result,
-            )
-            return streamed_response(cache_result)
-        elif isinstance(cache_result, str):
-            # Placeholder found - return URL for client polling
-            logger.info(
-                "cache_placeholder_found_returning_url",
+                "cache_found_returning_url",
                 cache_hash=cache_hash,
                 blob_name=blob_name,
                 poll_url=cache_result,
