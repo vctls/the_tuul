@@ -14,7 +14,9 @@ interface PollResponse {
 
 async function pollForResult(url: string): Promise<Blob> {
     while (true) {
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            cache: 'no-cache'
+        });
         const contentType = response.headers.get("content-type");
 
         if (contentType?.includes("application/json")) {

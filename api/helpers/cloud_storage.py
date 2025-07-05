@@ -99,6 +99,8 @@ def upload_to_cache(
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(blob_name)
 
+        # Set cache control headers to prevent caching
+        blob.cache_control = "no-cache, no-store, must-revalidate"
         blob.upload_from_filename(zip_path)
         logger.info(
             "cache_upload_success",
@@ -139,6 +141,8 @@ def create_cache_placeholder(
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(blob_name)
 
+        # Set cache control headers to prevent caching
+        blob.cache_control = "no-cache, no-store, must-revalidate"
         blob.upload_from_string(
             json.dumps(placeholder_data), content_type="application/json"
         )
