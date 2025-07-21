@@ -108,7 +108,7 @@ export default defineComponent({
         return this.mediaStore.separationModel == BACKING_VOCALS_SEPARATOR_MODEL;
       },
       set(value) {
-        this.separationModel = value
+        this.mediaStore.separationModel = value
           ? BACKING_VOCALS_SEPARATOR_MODEL
           : NO_VOCALS_SEPARATOR_MODEL;
       },
