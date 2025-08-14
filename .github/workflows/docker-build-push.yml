@@ -62,5 +62,5 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
         build-args: |
-          TUUL_API_HOSTNAME=''
-          TUUL_DONATE_URL='https://ko-fi.com/incidentist'
+          TUUL_API_HOSTNAME=
+          TUUL_DONATE_URL=https://ko-fi.com/incidentist
