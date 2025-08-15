@@ -39,7 +39,7 @@ WORKDIR $APP_HOME
 
 # Install dependencies.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg build-essential \
+    && apt-get install -y --no-install-recommends build-essential \
     && pip install "poetry==$POETRY_VERSION"
 
 COPY ./poetry.lock ./pyproject.toml ./
@@ -80,7 +80,8 @@ RUN apt-get update \
 # Copy local code to the container image.
 COPY api api
 # Copy gunicorn configuration
-COPY gunicorn.conf.py .
+COPY gunicorn.conf.py pyproject.toml poetry.lock ${APP_HOME}
+
 # Copy frontend static files from the node builder to the correct location
 # for FastAPI to serve them
 COPY --from=frontend-builder /app/api/assets/bundles api/assets/bundles
