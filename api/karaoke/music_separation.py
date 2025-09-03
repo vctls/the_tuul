@@ -41,13 +41,15 @@ def split_song(
 
     separator.load_model(model_name)
 
-    tracks = separator.separate(str(songfile))
+    output_names = {
+        "Vocals": "vocals",
+        "Instrumental": "accompaniment",
+    }
+    
+    tracks = separator.separate(str(songfile), output_names)
 
-    # The order of tracks in the output is not consistent, sadly
-    if model_name in ["UVR_MDXNET_KARA_2.onnx", "UVR-MDX-NET-Inst_HQ_3.onnx"]:
-        vocals_filename, accompaniment_filename = tracks
-    else:
-        accompaniment_filename, vocals_filename = tracks
+    vocals_filename = "vocals.wav"
+    accompaniment_filename = "accompaniment.wav"
     logging.info(
         f"Got vocals: {vocals_filename}, Accompaniment: {accompaniment_filename}"
     )
