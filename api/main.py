@@ -21,7 +21,7 @@ from markupsafe import Markup
 from pydantic import BaseModel
 
 from . import settings
-from . import logging as app_logging
+from . import app_logging
 from .karaoke import music_separation
 from .helpers import youtube_helper, zip_helper, cloud_storage
 from .vite_assets import vite_assets
