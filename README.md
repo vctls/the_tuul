@@ -15,6 +15,10 @@ This is a FastAPI app. Run it like so:
 
 Load up http://localhost:8000 and follow the instructions!
 
+### Running Seperate Separator App
+
+`poetry run python -m api.separator_socket_app`
+
 ## Build
 To build the Docker image:
 

@@ -1,5 +1,35 @@
+import base64
+import json
 import logging
+import subprocess
+from enum import Enum
 from pathlib import Path
+from typing import Optional
+
+import httpx
+
+"""
+Music Separation Module
+
+This module provides multiple methods for separating audio tracks into vocals and accompaniment:
+
+1. **API Method** (_split_song_api): Uses the audio-separator Python library directly
+   - Fastest for development and testing
+   - Limited to available system memory
+   - Runs in the current Python process
+
+2. **CLI Method** (_split_song_cli): Uses the audio-separator command-line tool
+   - Better memory management through subprocess isolation
+   - Consistent with production deployment patterns
+   - Requires audio-separator CLI to be installed
+
+3. **Socket Method** (_split_song_socket): Communicates with external separation server
+   - Enables GPU acceleration on remote/host machines
+   - Useful for containerized deployments where GPU access is limited
+   - Requires a running separator socket server
+
+The main split_song() function automatically selects the appropriate method based on parameters.
+"""
 
 MODELS_DIR = Path(__file__).parent.parent / "pretrained_models"
 DEFAULT_MODEL = "UVR_MDXNET_KARA_2.onnx"
@@ -11,13 +41,31 @@ AVAILABLE_MODELS = [
 ]
 
 
-def split_song(
-    songfile: Path, song_dir: Path, model_name: str = DEFAULT_MODEL
+class SeparationMethod(Enum):
+    API = "api"
+    CLI = "cli" 
+    SOCKET = "socket"
+
+
+def _validate_model(model_name: str) -> None:
+    """Validate that the model name is in the list of available models."""
+    if model_name not in AVAILABLE_MODELS:
+        raise ValueError(
+            f"Model {model_name} not found. Available models: {AVAILABLE_MODELS}"
+        )
+
+
+def _get_output_paths(song_dir: Path) -> tuple[Path, Path]:
+    """Get the expected output file paths for vocals and accompaniment."""
+    vocals_path = song_dir / "vocals.wav"
+    accompaniment_path = song_dir / "accompaniment.wav"
+    return accompaniment_path, vocals_path
+
+
+def _split_song_api(
+    songfile: Path, song_dir: Path, model_name: str
 ) -> tuple[Path, Path]:
-    """
-    Split song into instrumental and vocal tracks.
-    Returns paths to accompaniment and vocal tracks.
-    """
+    """Split song using the audio_separator Python API."""
     try:
         from audio_separator.separator import Separator
     except ModuleNotFoundError as e:
@@ -29,14 +77,9 @@ def split_song(
             song_dir.joinpath("accompaniment.wav")
         ), song_dir.joinpath("vocals.wav")
 
-    if model_name not in AVAILABLE_MODELS:
-        raise ValueError(
-            f"Model {model_name} not found. Available models: {AVAILABLE_MODELS}"
-        )
-
     separator = Separator(
         output_dir=str(song_dir),
-        model_file_dir=MODELS_DIR,
+        model_file_dir=str(MODELS_DIR),
     )
 
     separator.load_model(model_name)
@@ -45,14 +88,135 @@ def split_song(
         "Vocals": "vocals",
         "Instrumental": "accompaniment",
     }
-    
-    tracks = separator.separate(str(songfile), output_names)
 
-    vocals_filename = "vocals.wav"
-    accompaniment_filename = "accompaniment.wav"
+    separator.separate(str(songfile), output_names)
+
+    return _get_output_paths(song_dir)
+
+
+def _split_song_cli(
+    songfile: Path, song_dir: Path, model_name: str
+) -> tuple[Path, Path]:
+    """Split song using the audio-separator command-line tool."""
+    output_names = {
+        "Vocals": "vocals",
+        "Instrumental": "accompaniment",
+    }
+
+    cmd = [
+        "audio-separator",
+        str(songfile),
+        "--output_dir",
+        str(song_dir),
+        "--model_file_dir",
+        str(MODELS_DIR),
+        "--model_filename",
+        model_name,
+        "--custom_output_names",
+        json.dumps(output_names),
+    ]
+
+    try:
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        logging.info(f"audio-separator output: {result.stdout}")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"audio-separator failed: {e.stderr}")
+        raise
+    except FileNotFoundError:
+        logging.error(
+            "audio-separator command not found. Please install audio-separator CLI tool."
+        )
+        raise
+
+    return _get_output_paths(song_dir)
+
+
+def _split_song_socket(
+    songfile: Path, song_dir: Path, model_name: str, socket_path: str
+) -> tuple[Path, Path]:
+    """Split song using external separation server via Unix domain socket."""
+    # Read and encode the input file
+    audio_data = songfile.read_bytes()
+    audio_base64 = base64.b64encode(audio_data).decode("utf-8")
+
+    # Prepare request payload
+    request_data = {
+        "model_name": model_name,
+        "audio_base64": audio_base64,
+        "filename": songfile.name,
+    }
+
+    # Make request to socket server
+    try:
+        with httpx.Client(transport=httpx.HTTPTransport(uds=socket_path)) as client:
+            response = client.post(
+                "http://localhost/separate", json=request_data, timeout=300
+            )
+            response.raise_for_status()
+
+        result = response.json()
+
+        if not result.get("success"):
+            error_msg = result.get("error", "Unknown error")
+            raise RuntimeError(f"Socket separation failed: {error_msg}")
+
+        # Decode and write output files
+        vocals_data = base64.b64decode(result["vocals_base64"])
+        accompaniment_data = base64.b64decode(result["accompaniment_base64"])
+
+        vocals_path = song_dir / "vocals.wav"
+        accompaniment_path = song_dir / "accompaniment.wav"
+
+        vocals_path.write_bytes(vocals_data)
+        accompaniment_path.write_bytes(accompaniment_data)
+
+        return accompaniment_path, vocals_path
+
+    except httpx.RequestError as e:
+        logging.warning(f"Socket communication failed: {e}, falling back to API method")
+        return split_song(songfile, song_dir, model_name, method=SeparationMethod.API)
+    except Exception as e:
+        logging.warning(f"Socket separation error: {e}, falling back to API method")
+        return split_song(songfile, song_dir, model_name, method=SeparationMethod.API)
+
+
+def split_song(
+    songfile: Path,
+    song_dir: Path,
+    model_name: str = DEFAULT_MODEL,
+    method: SeparationMethod = SeparationMethod.API,
+    socket_path: Optional[str] = None,
+) -> tuple[Path, Path]:
+    """
+    Split song into instrumental and vocal tracks.
+    Returns paths to accompaniment and vocal tracks.
+
+    Args:
+        songfile: Path to the input audio file
+        song_dir: Directory to save the separated tracks
+        model_name: Name of the separation model to use
+        method: SeparationMethod enum value, or ignored if socket_path provided
+        socket_path: Path to Unix domain socket for external separation server (overrides method)
+    """
+    _validate_model(model_name)
+
+    # Socket path takes precedence over method
+    if socket_path:
+        accompaniment_path, vocals_path = _split_song_socket(
+            songfile, song_dir, model_name, socket_path
+        )
+    elif method == SeparationMethod.API:
+        accompaniment_path, vocals_path = _split_song_api(
+            songfile, song_dir, model_name
+        )
+    elif method == SeparationMethod.CLI:
+        accompaniment_path, vocals_path = _split_song_cli(
+            songfile, song_dir, model_name
+        )
+    else:
+        raise ValueError(f"Invalid method '{method}'. Must be SeparationMethod.API or SeparationMethod.CLI")
+
     logging.info(
-        f"Got vocals: {vocals_filename}, Accompaniment: {accompaniment_filename}"
+        f"Got vocals: {vocals_path.name}, Accompaniment: {accompaniment_path.name}"
     )
-    accompaniment_path = song_dir / accompaniment_filename
-    vocals_path = song_dir / vocals_filename
     return accompaniment_path, vocals_path
