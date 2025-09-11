@@ -36,3 +36,6 @@ CORS_ALLOW_ALL_ORIGINS = True
 # Server settings
 HOST = "0.0.0.0"
 PORT = int(os.getenv("PORT", "8000"))
+
+# Separator socket path (if set, use socket-based separation for GPU access)
+SEPARATOR_SOCKET_PATH = os.getenv("SEPARATOR_SOCKET_PATH", "/tmp/tuul.sock")

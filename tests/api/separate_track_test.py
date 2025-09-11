@@ -17,19 +17,20 @@ def audio_file():
         return (file_path.name, f.read(), "audio/mpeg")
 
 
-def test_separate_track_integration(audio_file):
-    """Test the music separation API endpoint."""
+def test_separate_track_integration_sync(audio_file):
+    """Test the syncronous music separation API endpoint."""
     # Create a client for making requests
     client = TestClient(app)
     url = "/separate_track"
 
     # Make the request using the client
     filename, content, content_type = audio_file
-    response = client.post(
-        url,
-        data={"modelName": "UVR_MDXNET_KARA_2.onnx"},
-        files={"songFile": (filename, content, content_type)},
-    )
+    with mock.patch("api.settings.SEPARATED_TRACKS_BUCKET", None):
+        response = client.post(
+            url,
+            data={"modelName": "UVR_MDXNET_KARA_2.onnx"},
+            files={"songFile": (filename, content, content_type)},
+        )
 
     # Check that we got a successful response
     assert response.status_code == 200
