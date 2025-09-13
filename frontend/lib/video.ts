@@ -180,6 +180,23 @@ interface DownloadPollResponse {
     finishedDownloadURL: string;
 }
 
+async function isYouTubeError(response: Response, blob: Blob): Promise<string | null> {
+    // Check if this is an error JSON response instead of a ZIP
+    const contentType = response.headers.get("content-type");
+    if (contentType?.includes("application/json") || blob.type === "application/json") {
+        const text = await blob.text();
+        try {
+            const errorData = JSON.parse(text);
+            if (!errorData.success && errorData.error) {
+                return errorData.error;
+            }
+        } catch (parseError) {
+            // If it's not valid JSON, continue as normal blob
+        }
+    }
+    return null;
+}
+
 async function pollForVideoResult(url: string): Promise<Blob> {
     const POLL_INTERVAL = 10000; // 10 seconds
     while (true) {
@@ -209,7 +226,15 @@ async function pollForVideoResult(url: string): Promise<Blob> {
             throw new ApiError(url, errMsg, response.status);
         }
 
-        return await response.blob();
+        const blob = await response.blob();
+        
+        // Check if this is an error response
+        const errorMessage = await isYouTubeError(response, blob);
+        if (errorMessage) {
+            throw new ApiError(url, errorMessage);
+        }
+
+        return blob;
     }
 }
 
