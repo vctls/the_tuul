@@ -138,7 +138,19 @@ export default defineComponent({
         this.mediaStore.backgroundVideo = videoBlob;
       } catch (e) {
         console.error(e);
-        this.youtubeError = `There was a problem downloading that video: ${e.message}. Please try again or use a service such as <a href="https://v2.youconvert.net/en/">YouConvert</a> to get the audio and add it above.`;
+        let errorMessage = e.message;
+        
+        // Try to extract the detail from JSON error responses
+        try {
+          const errorObj = JSON.parse(errorMessage);
+          if (errorObj.detail) {
+            errorMessage = errorObj.detail;
+          }
+        } catch (parseError) {
+          // If it's not JSON, use the original message
+        }
+        
+        this.youtubeError = `There was a problem downloading that video: ${errorMessage}. Please try again or use a service such as <a href="https://v2.youconvert.net/en/">YouConvert</a> to get the audio and add it above.`;
       }
       this.isLoadingYouTube = false;
     },

@@ -25,6 +25,7 @@ from . import app_logging
 from .karaoke import music_separation
 from .karaoke.music_separation import SeparationMethod
 from .helpers import youtube_helper, zip_helper, cloud_storage
+from .helpers.youtube_helper import YouTubeException
 from .vite_assets import vite_assets
 
 # Configure logging
@@ -267,12 +268,15 @@ async def download_youtube_video(
         return DownloadPollResponse(finishedDownloadURL=poll_url)
 
     # Fallback to synchronous processing if no storage configured
-    with tempfile.TemporaryDirectory() as song_files_dir:
-        song_files_dir_path = Path(song_files_dir)
-        zip_path = youtube_helper.download_and_zip_youtube(
-            video_id, youtube_url, song_files_dir_path
-        )
-        return streamed_response(zip_path)
+    try:
+        with tempfile.TemporaryDirectory() as song_files_dir:
+            song_files_dir_path = Path(song_files_dir)
+            zip_path = youtube_helper.download_and_zip_youtube(
+                video_id, youtube_url, song_files_dir_path
+            )
+            return streamed_response(zip_path)
+    except YouTubeException as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.post("/log_error")

@@ -139,14 +139,13 @@ def write_async_error(error_message: str, filename: str):
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         error_file_path = temp_path / "error.json"
-        
-        error_data = {
-            "success": False,
-            "error": error_message
-        }
-        
+
+        error_data = {"success": False, "error": error_message}
+
         error_file_path.write_text(json.dumps(error_data))
-        cloud_storage.upload_to_cache(filename, error_file_path, folder="downloaded_videos")
+        cloud_storage.upload_to_cache(
+            filename, error_file_path, folder="downloaded_videos"
+        )
 
 
 def process_youtube_download_background(video_id: str, youtube_url: str):
@@ -154,10 +153,19 @@ def process_youtube_download_background(video_id: str, youtube_url: str):
     try:
         with tempfile.TemporaryDirectory() as song_files_dir:
             song_files_dir_path = Path(song_files_dir)
-            zip_path = download_and_zip_youtube(video_id, youtube_url, song_files_dir_path)
+            zip_path = download_and_zip_youtube(
+                video_id, youtube_url, song_files_dir_path
+            )
 
             # Upload to storage using the downloaded_videos folder
-            cloud_storage.upload_to_cache(video_id, zip_path, folder="downloaded_videos")
+            cloud_storage.upload_to_cache(
+                video_id, zip_path, folder="downloaded_videos"
+            )
     except YouTubeException as e:
-        logger.error("youtube_download_failed", video_id=video_id, youtube_url=youtube_url, error=str(e))
+        logger.error(
+            "youtube_download_failed",
+            video_id=video_id,
+            youtube_url=youtube_url,
+            error=str(e),
+        )
         write_async_error(str(e), video_id)
