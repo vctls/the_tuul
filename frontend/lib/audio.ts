@@ -14,17 +14,22 @@ interface PollResponse {
 
 async function pollForResult(url: string): Promise<Blob> {
     while (true) {
-        const response = await fetch(url, {
-            cache: 'no-cache'
-        });
-        const contentType = response.headers.get("content-type");
+        try {
+            const response = await fetch(url, {
+                cache: 'no-cache'
+            });
+            const contentType = response.headers.get("content-type");
 
-        if (contentType?.includes("application/json")) {
-            await new Promise(resolve => setTimeout(resolve, 30000));
-            continue;
+            if (contentType?.includes("application/json")) {
+                await new Promise(resolve => setTimeout(resolve, 30000));
+                continue;
+            }
+
+            return await response.blob();
+        } catch (error) {
+            console.error(`Failed to fetch audio separation result from URL: ${url}`, error);
+            throw error;
         }
-
-        return await response.blob();
     }
 }
 
@@ -47,21 +52,27 @@ export async function separateTrack(songFile: File, modelName: SeparationModel):
     formData.append("songFile", songFile);
     formData.append("modelName", modelName);
     const url = `${API_HOSTNAME}/separate_track`;
-    const response = await fetch(url, {
-        method: "POST",
-        body: formData,
-    });
+    
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            body: formData,
+        });
 
-    const contentType = response.headers.get("content-type");
+        const contentType = response.headers.get("content-type");
 
-    // The endpoint can return either a JSON response with a URL to poll for results or a direct ZIP file response
-    if (contentType?.includes("application/json")) {
-        const jsonResponse: PollResponse = await response.json();
-        const zipBlob = await pollForResult(jsonResponse.finishedTrackURL);
-        return await processZipResponse(zipBlob);
-    } else {
-        const zipBlob = await response.blob();
-        return await processZipResponse(zipBlob);
+        // The endpoint can return either a JSON response with a URL to poll for results or a direct ZIP file response
+        if (contentType?.includes("application/json")) {
+            const jsonResponse: PollResponse = await response.json();
+            const zipBlob = await pollForResult(jsonResponse.finishedTrackURL);
+            return await processZipResponse(zipBlob);
+        } else {
+            const zipBlob = await response.blob();
+            return await processZipResponse(zipBlob);
+        }
+    } catch (error) {
+        console.error(`Failed to fetch from separateTrack URL: ${url}`, error);
+        throw error;
     }
 }
 

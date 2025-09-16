@@ -135,9 +135,18 @@ async function createVideo(
 
     // Download most ffmpeg files to local blobs
     const [coreURL, wasmURL, workerURL] = await Promise.all([
-        toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-        toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),
+        toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript').catch(error => {
+            console.error(`Failed to fetch FFmpeg core from: ${baseURL}/ffmpeg-core.js`, error);
+            throw error;
+        }),
+        toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm').catch(error => {
+            console.error(`Failed to fetch FFmpeg WASM from: ${baseURL}/ffmpeg-core.wasm`, error);
+            throw error;
+        }),
+        toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript').catch(error => {
+            console.error(`Failed to fetch FFmpeg worker from: ${baseURL}/ffmpeg-core.worker.js`, error);
+            throw error;
+        }),
     ]);
     await ffmpeg.load({ coreURL, wasmURL, workerURL, classWorkerURL: `${workerBaseUrl}/worker.js` });
 
@@ -240,33 +249,39 @@ async function pollForVideoResult(url: string): Promise<Blob> {
 
 export async function fetchYouTubeVideo(url: string): Promise<[Blob, Blob, Object]> {
     const apiPath = "/download_video?url=" + url;
-    const response = await fetch(apiPath);
-    if (response.status !== 200) {
-        const errMsg = await response.text();
-        throw new ApiError(apiPath, errMsg, response.status);
+    
+    try {
+        const response = await fetch(apiPath);
+        if (response.status !== 200) {
+            const errMsg = await response.text();
+            throw new ApiError(apiPath, errMsg, response.status);
+        }
+
+        const contentType = response.headers.get("content-type");
+
+        let zipContents: Blob;
+
+        // The endpoint can return either a JSON response with a URL to poll for results or a direct ZIP file response
+        if (contentType?.includes("application/json")) {
+            const jsonResponse: DownloadPollResponse = await response.json();
+            zipContents = await pollForVideoResult(jsonResponse.finishedDownloadURL);
+        } else {
+            zipContents = await response.blob();
+        }
+
+        const zip = await jszip.loadAsync(zipContents);
+        const [audio, video, metadata] = await Promise.all([
+            zip.file("audio.mp4").async("blob"),
+            zip.file("video.mp4").async("blob"),
+            zip.file("metadata.json").async("string").then(md => JSON.parse(md))
+        ]);
+
+        // TODO return blob URLs instead
+        return [audio, video, metadata];
+    } catch (error) {
+        console.error(`Failed to fetch YouTube video from URL: ${apiPath}`, error);
+        throw error;
     }
-
-    const contentType = response.headers.get("content-type");
-
-    let zipContents: Blob;
-
-    // The endpoint can return either a JSON response with a URL to poll for results or a direct ZIP file response
-    if (contentType?.includes("application/json")) {
-        const jsonResponse: DownloadPollResponse = await response.json();
-        zipContents = await pollForVideoResult(jsonResponse.finishedDownloadURL);
-    } else {
-        zipContents = await response.blob();
-    }
-
-    const zip = await jszip.loadAsync(zipContents);
-    const [audio, video, metadata] = await Promise.all([
-        zip.file("audio.mp4").async("blob"),
-        zip.file("video.mp4").async("blob"),
-        zip.file("metadata.json").async("string").then(md => JSON.parse(md))
-    ]);
-
-    // TODO return blob URLs instead
-    return [audio, video, metadata];
 }
 
 // Parse a YouTube video title into song artist and title
