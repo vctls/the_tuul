@@ -17,7 +17,7 @@ Load up http://localhost:8000 and follow the instructions!
 
 ### Running Seperate Separator App
 
-`poetry run python -m api.separator_socket_app`
+`poetry run python -m api.separator_server`
 
 ## Build
 To build the Docker image:

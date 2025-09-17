@@ -103,18 +103,15 @@ def process_track_separation_background(
         with song_file_path.open("wb") as f:
             f.write(song_content)
 
-        separation_method = (
-            SeparationMethod.SOCKET
-            if settings.SEPARATOR_SOCKET_PATH
-            else SeparationMethod.API
-        )
+        separation_method = SeparationMethod.API
 
         accompaniment_path, vocal_path = music_separation.split_song(
             song_file_path,
             song_files_dir_path,
             model_name=model_name,
             method=separation_method,
-            socket_path=settings.SEPARATOR_SOCKET_PATH,
+            host=settings.SEPARATOR_HOST,
+            port=settings.SEPARATOR_PORT,
         )
         zip_path = zip_helper.create_zip_file(
             song_files_dir_path / "split_song.zip",
@@ -213,18 +210,15 @@ async def separate_track(
             with song_file_path.open("wb") as f:
                 f.write(song_content)
 
-            separation_method = (
-                SeparationMethod.SOCKET
-                if settings.SEPARATOR_SOCKET_PATH
-                else SeparationMethod.API
-            )
+            separation_method = SeparationMethod.API
 
             accompaniment_path, vocal_path = music_separation.split_song(
                 song_file_path,
                 song_files_dir_path,
                 model_name=modelName,
                 method=separation_method,
-                socket_path=settings.SEPARATOR_SOCKET_PATH,
+                host=settings.SEPARATOR_HOST,
+                port=settings.SEPARATOR_PORT,
             )
             zip_path = zip_helper.create_zip_file(
                 song_files_dir_path / "split_song.zip",

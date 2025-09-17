@@ -3,7 +3,7 @@
 FastAPI app for GPU-accelerated music separation on host machine.
 
 This server runs on the host (outside Docker) to provide GPU access for music separation.
-The containerized Tuul app communicates with this server via Unix Domain Socket using HTTP.
+The containerized Tuul app communicates with this server via TCP on localhost.
 """
 
 import base64
@@ -22,7 +22,12 @@ from . import app_logging
 from . import settings
 
 # Import model constants and split_song function from the main separation module for DRY
-from .karaoke.music_separation import AVAILABLE_MODELS, DEFAULT_MODEL, split_song, SeparationMethod
+from .karaoke.music_separation import (
+    AVAILABLE_MODELS,
+    DEFAULT_MODEL,
+    split_song,
+    SeparationMethod,
+)
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -136,4 +141,4 @@ if __name__ == "__main__":
     # This won't be used since we'll run with uvicorn, but helpful for testing
     import uvicorn
 
-    uvicorn.run(app, uds=settings.SEPARATOR_SOCKET_PATH, log_level="info")
+    uvicorn.run(app, host="localhost", port=settings.SEPARATOR_PORT, log_level="info")

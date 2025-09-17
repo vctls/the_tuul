@@ -23,10 +23,10 @@ This module provides multiple methods for separating audio tracks into vocals an
    - Consistent with production deployment patterns
    - Requires audio-separator CLI to be installed
 
-3. **Socket Method** (_split_song_socket): Communicates with external separation server
+3. **TCP Method** (_split_song_tcp): Communicates with external separation server via TCP
    - Enables GPU acceleration on remote/host machines
    - Useful for containerized deployments where GPU access is limited
-   - Requires a running separator socket server
+   - Requires a running separator server on localhost
 
 The main split_song() function automatically selects the appropriate method based on parameters.
 """
@@ -43,8 +43,7 @@ AVAILABLE_MODELS = [
 
 class SeparationMethod(Enum):
     API = "api"
-    CLI = "cli" 
-    SOCKET = "socket"
+    CLI = "cli"
 
 
 def _validate_model(model_name: str) -> None:
@@ -131,10 +130,10 @@ def _split_song_cli(
     return _get_output_paths(song_dir)
 
 
-def _split_song_socket(
-    songfile: Path, song_dir: Path, model_name: str, socket_path: str
+def _split_song_tcp(
+    songfile: Path, song_dir: Path, model_name: str, host: str, port: int
 ) -> tuple[Path, Path]:
-    """Split song using external separation server via Unix domain socket."""
+    """Split song using external separation server via TCP."""
     # Read and encode the input file
     audio_data = songfile.read_bytes()
     audio_base64 = base64.b64encode(audio_data).decode("utf-8")
@@ -146,11 +145,11 @@ def _split_song_socket(
         "filename": songfile.name,
     }
 
-    # Make request to socket server
+    # Make request to separation server via TCP
     try:
-        with httpx.Client(transport=httpx.HTTPTransport(uds=socket_path)) as client:
+        with httpx.Client() as client:
             response = client.post(
-                "http://localhost/separate", json=request_data, timeout=300
+                f"http://{host}:{port}/separate", json=request_data, timeout=300
             )
             response.raise_for_status()
 
@@ -173,10 +172,10 @@ def _split_song_socket(
         return accompaniment_path, vocals_path
 
     except httpx.RequestError as e:
-        logging.warning(f"Socket communication failed: {e}, falling back to API method")
+        logging.warning(f"Separation server communication failed: {e}, falling back to API method")
         return split_song(songfile, song_dir, model_name, method=SeparationMethod.API)
     except Exception as e:
-        logging.warning(f"Socket separation error: {e}, falling back to API method")
+        logging.warning(f"Separation server error: {e}, falling back to API method")
         return split_song(songfile, song_dir, model_name, method=SeparationMethod.API)
 
 
@@ -185,7 +184,8 @@ def split_song(
     song_dir: Path,
     model_name: str = DEFAULT_MODEL,
     method: SeparationMethod = SeparationMethod.API,
-    socket_path: Optional[str] = None,
+    host: Optional[str] = None,
+    port: Optional[int] = None,
 ) -> tuple[Path, Path]:
     """
     Split song into instrumental and vocal tracks.
@@ -195,15 +195,16 @@ def split_song(
         songfile: Path to the input audio file
         song_dir: Directory to save the separated tracks
         model_name: Name of the separation model to use
-        method: SeparationMethod enum value, or ignored if socket_path provided
-        socket_path: Path to Unix domain socket for external separation server (overrides method)
+        method: SeparationMethod enum value
+        host: Host for external separation server
+        port: TCP port for external separation server (host+port overrides method if provided)
     """
     _validate_model(model_name)
 
-    # Socket path takes precedence over method
-    if socket_path:
-        accompaniment_path, vocals_path = _split_song_socket(
-            songfile, song_dir, model_name, socket_path
+    # TCP host+port takes precedence over method
+    if host and port:
+        accompaniment_path, vocals_path = _split_song_tcp(
+            songfile, song_dir, model_name, host, port
         )
     elif method == SeparationMethod.API:
         accompaniment_path, vocals_path = _split_song_api(
