@@ -47,14 +47,14 @@ trio = ["trio (>=0.26.1)"]
 
 [[package]]
 name = "audio-separator"
-version = "0.32.0"
+version = "0.36.1"
 description = "Easy to use audio stem separation, using various models from UVR trained primarily by @Anjok07"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "audio_separator-0.32.0-py3-none-any.whl", hash = "sha256:063107e1ba8ed1bcff84ac83dd145156d04debcb579418d915bfd538ccb84142"},
-    {file = "audio_separator-0.32.0.tar.gz", hash = "sha256:b9174e42cead330757f76db3048afb1bed0f05d7bc3d59eb4d9527e1febeb99b"},
+    {file = "audio_separator-0.36.1-py3-none-any.whl", hash = "sha256:2b6935ada82349901683c4d621efa09e9ceccca92f86dac1280b7ba96d4e9c1e"},
+    {file = "audio_separator-0.36.1.tar.gz", hash = "sha256:b00f0d7612a40c9d7bb08f45c63a33f4cd3f0c7a5276c1fd6ea6fcec179eb272"},
 ]
 
 [package.dependencies]
@@ -83,6 +83,7 @@ tqdm = "*"
 
 [package.extras]
 cpu = ["onnxruntime (>=1.17)"]
+dml = ["onnxruntime-directml (>=1.17)", "torch_directml"]
 gpu = ["onnxruntime-gpu (>=1.17)"]
 
 [[package]]
@@ -3828,4 +3829,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "ca58166cb52f1aa41f8dd6173752a15f67c73b7c69b6bdd29394a3df0829d1a6"
+content-hash = "c634174e39068850dbb42950c64b5145424e8f86106f6dc80a676e7882eec9cf"

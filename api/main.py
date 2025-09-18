@@ -103,7 +103,16 @@ def process_track_separation_background(
         with song_file_path.open("wb") as f:
             f.write(song_content)
 
-        separation_method = SeparationMethod.API
+        separation_method = (
+            SeparationMethod.MODAL_API
+            if settings.SEPARATOR_MODAL_API_URL
+            else SeparationMethod.API
+        )
+        logger.info(
+            "background_separation_started",
+            method=separation_method,
+            cache_hash=cache_hash,
+        )
 
         accompaniment_path, vocal_path = music_separation.split_song(
             song_file_path,
@@ -112,6 +121,7 @@ def process_track_separation_background(
             method=separation_method,
             host=settings.SEPARATOR_HOST,
             port=settings.SEPARATOR_PORT,
+            modal_api_url=settings.SEPARATOR_MODAL_API_URL,
         )
         zip_path = zip_helper.create_zip_file(
             song_files_dir_path / "split_song.zip",
@@ -210,7 +220,15 @@ async def separate_track(
             with song_file_path.open("wb") as f:
                 f.write(song_content)
 
-            separation_method = SeparationMethod.API
+            separation_method = (
+                SeparationMethod.MODAL_API
+                if settings.SEPARATOR_MODAL_API_URL
+                else SeparationMethod.API
+            )
+            logger.info(
+                "synchronous_separation_started",
+                method=separation_method,
+            )
 
             accompaniment_path, vocal_path = music_separation.split_song(
                 song_file_path,
@@ -219,6 +237,7 @@ async def separate_track(
                 method=separation_method,
                 host=settings.SEPARATOR_HOST,
                 port=settings.SEPARATOR_PORT,
+                modal_api_url=settings.SEPARATOR_MODAL_API_URL,
             )
             zip_path = zip_helper.create_zip_file(
                 song_files_dir_path / "split_song.zip",
