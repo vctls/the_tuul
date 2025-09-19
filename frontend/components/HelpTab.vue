@@ -67,6 +67,11 @@
         </li>
       </ul>
       <h3>What's New</h3>
+      <h5>0.17 - September 19, 2025</h5>
+      <ul>
+        <li>Faster video creation using GPUs or Modal.com</li>
+        <li>Bug fixes and under-the-hood improvements.</li>
+      </ul>
       <h5>0.15 - June 14, 2025</h5>
       <ul>
         <li>Lots of under-the-hood changes and bugfixes.</li>
