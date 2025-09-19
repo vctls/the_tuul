@@ -91,43 +91,73 @@ def streamed_response(file_path: Path) -> StreamingResponse:
     return StreamingResponse(streaming_content(), media_type="application/zip")
 
 
+def perform_music_separation(
+    song_content: bytes,
+    song_filename: str,
+    model_name: str,
+    song_files_dir: Path,
+    cache_hash: Optional[str] = None
+) -> Path:
+    """Perform music separation and return the path to the created zip file.
+
+    Args:
+        song_content: The audio file content as bytes
+        song_filename: The name of the song file
+        model_name: The separation model to use
+        song_files_dir: The temporary directory to work in
+        cache_hash: Optional cache hash for logging context
+
+    Returns:
+        Path to the created zip file containing separated tracks
+    """
+    # Save uploaded file
+    song_file_path = song_files_dir / song_filename
+    with song_file_path.open("wb") as f:
+        f.write(song_content)
+
+    separation_method = (
+        SeparationMethod.MODAL_API
+        if settings.SEPARATOR_MODAL_API_URL
+        else SeparationMethod.API
+    )
+
+    logger.info(
+        "separation_started",
+        method=separation_method,
+        cache_hash=cache_hash,
+    )
+
+    accompaniment_path, vocal_path = music_separation.split_song(
+        song_file_path,
+        song_files_dir,
+        model_name=model_name,
+        method=separation_method,
+        host=settings.SEPARATOR_HOST,
+        port=settings.SEPARATOR_PORT,
+        modal_api_url=settings.SEPARATOR_MODAL_API_URL,
+    )
+    zip_path = zip_helper.create_zip_file(
+        song_files_dir / "split_song.zip",
+        [(accompaniment_path, "accompaniment.wav"), (vocal_path, "vocals.wav")],
+    )
+
+    logger.info("zip_complete", path=zip_path, cache_hash=cache_hash)
+
+    return zip_path
+
+
 def process_track_separation_background(
     cache_hash: str, model_name: str, song_content: bytes, song_filename: str
 ):
     """Background task to process track separation and upload to cache."""
+    logger.info("background_separation_started", cache_hash=cache_hash)
+
     with tempfile.TemporaryDirectory() as song_files_dir:
         song_files_dir_path = Path(song_files_dir)
 
-        # Save uploaded file
-        song_file_path = song_files_dir_path / song_filename
-        with song_file_path.open("wb") as f:
-            f.write(song_content)
-
-        separation_method = (
-            SeparationMethod.MODAL_API
-            if settings.SEPARATOR_MODAL_API_URL
-            else SeparationMethod.API
+        zip_path = perform_music_separation(
+            song_content, song_filename, model_name, song_files_dir_path, cache_hash
         )
-        logger.info(
-            "background_separation_started",
-            method=separation_method,
-            cache_hash=cache_hash,
-        )
-
-        accompaniment_path, vocal_path = music_separation.split_song(
-            song_file_path,
-            song_files_dir_path,
-            model_name=model_name,
-            method=separation_method,
-            host=settings.SEPARATOR_HOST,
-            port=settings.SEPARATOR_PORT,
-            modal_api_url=settings.SEPARATOR_MODAL_API_URL,
-        )
-        zip_path = zip_helper.create_zip_file(
-            song_files_dir_path / "split_song.zip",
-            [(accompaniment_path, "accompaniment.wav"), (vocal_path, "vocals.wav")],
-        )
-        logger.info("background_zip_complete", path=zip_path, cache_hash=cache_hash)
 
         # Upload to cache
         blob_name = f"separated_tracks/{cache_hash}.zip"
@@ -210,40 +240,14 @@ async def separate_track(
             logger.warning("failed_to_create_placeholder", cache_hash=cache_hash)
     else:
         # No caching - process synchronously
+        logger.info("synchronous_separation_started")
+
         with tempfile.TemporaryDirectory() as song_files_dir:
             song_files_dir_path = Path(song_files_dir)
 
-            # Save uploaded file
-            song_file_path = song_files_dir_path / (
-                songFile.filename or "uploaded_song"
+            zip_path = perform_music_separation(
+                song_content, songFile.filename or "uploaded_song", modelName, song_files_dir_path
             )
-            with song_file_path.open("wb") as f:
-                f.write(song_content)
-
-            separation_method = (
-                SeparationMethod.MODAL_API
-                if settings.SEPARATOR_MODAL_API_URL
-                else SeparationMethod.API
-            )
-            logger.info(
-                "synchronous_separation_started",
-                method=separation_method,
-            )
-
-            accompaniment_path, vocal_path = music_separation.split_song(
-                song_file_path,
-                song_files_dir_path,
-                model_name=modelName,
-                method=separation_method,
-                host=settings.SEPARATOR_HOST,
-                port=settings.SEPARATOR_PORT,
-                modal_api_url=settings.SEPARATOR_MODAL_API_URL,
-            )
-            zip_path = zip_helper.create_zip_file(
-                song_files_dir_path / "split_song.zip",
-                [(accompaniment_path, "accompaniment.wav"), (vocal_path, "vocals.wav")],
-            )
-            logger.info("zip_complete", path=zip_path)
 
             return streamed_response(zip_path)
 
