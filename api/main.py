@@ -11,6 +11,7 @@ from fastapi import (
     HTTPException,
     Query,
     Request,
+    Response,
     UploadFile,
 )
 from fastapi.middleware.cors import CORSMiddleware
@@ -96,7 +97,7 @@ def perform_music_separation(
     song_filename: str,
     model_name: str,
     song_files_dir: Path,
-    cache_hash: Optional[str] = None
+    cache_hash: Optional[str] = None,
 ) -> Path:
     """Perform music separation and return the path to the created zip file.
 
@@ -246,7 +247,10 @@ async def separate_track(
             song_files_dir_path = Path(song_files_dir)
 
             zip_path = perform_music_separation(
-                song_content, songFile.filename or "uploaded_song", modelName, song_files_dir_path
+                song_content,
+                songFile.filename or "uploaded_song",
+                modelName,
+                song_files_dir_path,
             )
 
             return streamed_response(zip_path)
@@ -304,6 +308,18 @@ async def log_error(error_data: LogErrorRequest):
         extra=error_data.model_dump(),
     )
     return {"success": True}
+
+
+@app.api_route("/health", methods=["GET", "HEAD"])
+async def health(request: Request):
+    """Health-check endpoint for uptime monitors.
+
+    GET -> returns JSON {"status": "ok"}
+    HEAD -> returns empty 200
+    """
+    if request.method == "HEAD":
+        return Response(status_code=200)
+    return {"status": "ok"}
 
 
 if __name__ == "__main__":
