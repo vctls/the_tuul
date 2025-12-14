@@ -115,6 +115,14 @@ describe('LyricSegmentIterator', () => {
         const segments = Array.from(iterator);
         expect(segments.length).toBe(0);
     });
+
+    test('trims leading spaces', () => {
+        const lyrics = "Line 1\n Line 2";
+        const iterator = new LyricSegmentIterator(lyrics);
+        const segments = Array.from(iterator);
+        expect(segments.length).toBe(2);
+        expect(segments[1].text).toBe("Line 2");
+    });
 });
 
 test('compileLyricTimings', () => {
@@ -262,7 +270,7 @@ test('compileLyricTimings handles more events than segments', () => {
     const tooManyEvents: LyricEvent[] = [
         [1.0, LYRIC_MARKERS.SEGMENT_START],
         [2.0, LYRIC_MARKERS.SEGMENT_START], // This should trigger the error
-        [3.0, LYRIC_MARKERS.SEGMENT_START], 
+        [3.0, LYRIC_MARKERS.SEGMENT_START],
         [4.0, LYRIC_MARKERS.SEGMENT_START],
         [5.0, LYRIC_MARKERS.SEGMENT_START]
     ];

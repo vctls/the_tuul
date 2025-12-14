@@ -122,7 +122,7 @@ export function parseLyrics(lyricsText: string, includeMarkup: boolean = false):
     currentSegment += char;
     if (finishSegment) {
       segments.push({
-        text: currentSegment,
+        text: currentSegment.trimStart(),
       });
       currentSegment = "";
     }
